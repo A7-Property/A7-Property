@@ -1,0 +1,79 @@
+# Proposed paid resources only. Review cost and connect the repository before applying.
+# This file does not create services or authorize charges.
+# Run migrations with the separate tools image before triggering the API deploy.
+services:
+  - type: web
+    name: a7-property-api-production
+    runtime: docker
+    region: singapore
+    plan: 0.5c-512mb
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    autoDeployTrigger: off
+    numInstances: 1
+    healthCheckPath: /api/v1/health/ready
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+      # Enter the provisioned database URL with sslmode=require or stricter.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_PUBLIC_URL
+        sync: false
+      - key: TRUST_PROXY_HOPS
+        sync: false
+      - key: APP_VERSION
+        sync: false
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: ENABLE_SWAGGER
+        value: "false"
+      - key: ENABLE_JOBS
+        value: "true"
+      - key: STORAGE_DRIVER
+        value: r2
+      - key: R2_ACCOUNT_ID
+        sync: false
+      - key: R2_ACCESS_KEY_ID
+        sync: false
+      - key: R2_SECRET_ACCESS_KEY
+        sync: false
+      - key: R2_BUCKET_NAME
+        sync: false
+      - key: R2_PUBLIC_URL
+        sync: false
+      - key: MAIL_DRIVER
+        value: smtp
+      - key: SMTP_HOST
+        value: smtp.resend.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_SECURE
+        value: "false"
+      - key: SMTP_USER
+        value: resend
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: ALLOW_DEMO_CATALOG_SEED
+        value: "false"
+
+databases:
+  - name: a7-property-postgres-production
+    region: singapore
+    plan: 0.1c-256mb
+    postgresMajorVersion: "16"
+    databaseName: a7_property
+    user: a7
+    diskSizeGB: 5
+    ipAllowList: []

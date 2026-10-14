@@ -1,0 +1,13 @@
+"use client";
+
+import Link from "next/link";
+import { Bookmark, Trash2 } from "lucide-react";
+import { useLanguage } from "@/components/i18n/language-provider";
+import { useWebSavedSearches } from "@/hooks/use-web-saved-searches";
+import { WebShell, WebFooter } from "./web-shell";
+
+export function SavedSearches() {
+  const { tx } = useLanguage();
+  const { searches, ready, remove } = useWebSavedSearches();
+  return <WebShell section="searches"><section className="web-saved-searches web-container"><span className="web-eyebrow">{tx("YOUR HOME SEARCH", "သင့်အိမ်ရှာဖွေမှု")}</span><h1>{tx("Pick up where you left off.", "သင့်ရှာဖွေမှုကို ဆက်လုပ်ပါ။")}</h1><p>{tx("Search bookmarks are saved on this browser only. They do not sync with your account or send email alerts.", "ရှာဖွေမှုများကို ဤဘရောက်ဇာတွင်သာ သိမ်းပါသည်။ အကောင့်နှင့် မချိတ်ဆက်ပါ။ အီးမေးလ်အသိပေးချက် မပို့ပါ။")}</p>{!ready ? <p role="status">{tx("Loading saved searches…", "သိမ်းထားသောရှာဖွေမှုများ ဖွင့်နေသည်…")}</p> : searches.length ? <div className="web-bookmark-list">{searches.map((search) => <article key={search.id}><Bookmark /><div><h2>{search.title}</h2><p>{tx("Saved on this browser", "ဤဘရောက်ဇာတွင် သိမ်းထားပါသည်")}</p><Link className="web-button web-button-outline" href={search.href}>{tx("Run search", "ပြန်ရှာရန်")}</Link></div><button type="button" onClick={() => remove(search.id)} aria-label={tx(`Remove ${search.title}`, `${search.title} ကို ဖယ်ရန်`)}><Trash2 /></button></article>)}</div> : <div className="web-search-empty"><Bookmark /><h2>{tx("Your next search starts here", "သင့်ရှာဖွေမှုကို စတင်ပါ")}</h2><p>{tx("Choose filters in Buy or Rent, then select Save search to keep them here.", "ဝယ်ရန် သို့မဟုတ် ငှားရန်တွင် စစ်ထုတ်မှုများရွေးပြီး ရှာဖွေမှုသိမ်းရန်ကို နှိပ်ပါ။")}</p><Link href="/search?purpose=sale" className="web-button web-button-primary">{tx("Explore homes", "အိမ်များကြည့်ရန်")}</Link></div>}</section><WebFooter /></WebShell>;
+}

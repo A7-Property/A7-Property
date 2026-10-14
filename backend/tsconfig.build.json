@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  // Only src is compiled into dist. Including anything outside it moves the
+  // inferred root and emits dist/src/main.js, which breaks `node dist/main.js`.
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "test", "prisma", "**/*.spec.ts"]
+}

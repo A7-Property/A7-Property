@@ -1,0 +1,396 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  SEEKER
+  LISTER
+  ADMIN
+}
+
+enum PropertyType {
+  CONDO
+  APARTMENT
+  HOUSE
+  MINI_CONDO
+  VILLA
+  LAND
+  COMMERCIAL
+  OFFICE
+  SHOP
+  OTHER
+}
+
+enum ListingType {
+  RENT
+  SALE
+}
+
+enum PropertyStatus {
+  DRAFT
+  PUBLISHED
+  PAUSED
+  SOLD
+  RENTED
+  ARCHIVED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum FurnitureStatus {
+  UNFURNISHED
+  PARTLY_FURNISHED
+  FULLY_FURNISHED
+}
+
+enum InquiryStatus {
+  NEW
+  READ
+  REPLIED
+  CLOSED
+}
+
+enum ViewingStatus {
+  REQUESTED
+  CONFIRMED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+enum EmailTokenType {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+}
+
+enum UploadKind {
+  PROPERTY_IMAGE
+  AVATAR
+  IDENTIFICATION
+  PROPERTY_DOCUMENT
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  USER_LOGIN_FAILED
+  USER_LOCKED
+  USER_PASSWORD_CHANGED
+  USER_PASSWORD_RESET
+  USER_EMAIL_VERIFIED
+  USER_SESSIONS_REVOKED
+  USER_DEACTIVATED
+  USER_STATUS_CHANGED
+  USER_ROLE_CHANGED
+  PROPERTY_CREATED
+  PROPERTY_UPDATED
+  PROPERTY_STATUS_CHANGED
+  PROPERTY_VERIFICATION_CHANGED
+}
+
+model User {
+  id                  String                 @id @default(cuid())
+  email               String                 @unique
+  passwordHash        String
+  firstName           String
+  lastName            String
+  phone               String?
+  role                UserRole
+  avatarUrl           String?
+  isActive            Boolean                @default(true)
+  emailVerifiedAt     DateTime?
+  isAgent             Boolean                @default(false)
+  phoneVerified       Boolean                @default(false)
+  responseTimeMinutes Int?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  properties          Property[]
+  savedProperties     SavedProperty[]
+  sentInquiries       Inquiry[]              @relation("InquirySeeker")
+  receivedInquiries   Inquiry[]              @relation("InquiryLister")
+  seekerConversations Conversation[]         @relation("ConversationSeeker")
+  listerConversations Conversation[]         @relation("ConversationLister")
+  sentMessages        Message[]
+  seekerViewings      Viewing[]              @relation("ViewingSeeker")
+  listerViewings      Viewing[]              @relation("ViewingLister")
+  refreshSessions     RefreshSession[]
+  emailTokens         EmailToken[]
+  uploadedAssets      UploadedAsset[]
+  tokenVersion        Int                    @default(0)
+  failedLoginCount    Int                    @default(0)
+  lockedUntil         DateTime?
+  lastLoginAt         DateTime?
+  deactivatedAt       DateTime?
+  auditLogs           AuditLog[]
+  verificationDocs    VerificationDocument[]
+
+  @@index([role, isActive])
+}
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  actorId    String?
+  actorRole  UserRole?
+  action     AuditAction
+  targetType String?
+  targetId   String?
+  ip         String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+  actor      User?       @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String?
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+  @@index([ip, createdAt])
+  @@index([createdAt])
+}
+
+model EmailToken {
+  id         String         @id @default(cuid())
+  userId     String
+  type       EmailTokenType
+  tokenHash  String         @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime       @default(now())
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, consumedAt])
+  @@index([expiresAt])
+}
+
+model UploadedAsset {
+  id             String          @id @default(cuid())
+  userId         String
+  kind           UploadKind
+  storageKey     String          @unique
+  url            String
+  contentType    String
+  byteSize       Int
+  consumedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyImages PropertyImage[]
+
+  @@index([userId, kind, createdAt])
+  @@index([consumedAt, createdAt])
+}
+
+model RefreshSession {
+  id         String    @id @default(cuid())
+  userId     String
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  ip         String?
+  userAgent  String?
+  lastUsedAt DateTime  @default(now())
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model Property {
+  id                 String             @id @default(cuid())
+  ownerId            String
+  title              String
+  description        String
+  propertyType       PropertyType
+  listingType        ListingType
+  price              Decimal            @db.Decimal(16, 2)
+  currency           String             @default("MMK")
+  bedrooms           Int
+  bathrooms          Int
+  areaSqft           Int
+  address            String
+  city               String
+  township           String
+  state              String?
+  country            String             @default("Myanmar")
+  latitude           Decimal?           @db.Decimal(10, 7)
+  longitude          Decimal?           @db.Decimal(10, 7)
+  floor              Int?
+  yearBuilt          Int?
+  furniture          FurnitureStatus?
+  rating             Float?
+  status             PropertyStatus     @default(DRAFT)
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  owner              User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  images             PropertyImage[]
+  amenities          PropertyAmenity[]
+  savedBy            SavedProperty[]
+  inquiries          Inquiry[]
+  conversations      Conversation[]
+  viewings           Viewing[]
+  documents          PropertyDocument[]
+
+  @@index([status, listingType, createdAt])
+  @@index([city, township, propertyType])
+  @@index([ownerId, status])
+  @@index([price])
+}
+
+model PropertyImage {
+  id         String         @id @default(cuid())
+  propertyId String
+  url        String
+  storageKey String?
+  altText    String?
+  sortOrder  Int            @default(0)
+  isPrimary  Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+  uploadId   String?
+  property   Property       @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  upload     UploadedAsset? @relation(fields: [uploadId], references: [id], onDelete: SetNull)
+
+  @@index([propertyId, sortOrder])
+  @@index([uploadId])
+}
+
+model PropertyAmenity {
+  id         String   @id @default(cuid())
+  propertyId String
+  name       String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, name])
+}
+
+model SavedProperty {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([propertyId])
+}
+
+model Inquiry {
+  id         String        @id @default(cuid())
+  seekerId   String
+  listerId   String
+  propertyId String
+  subject    String
+  message    String
+  status     InquiryStatus @default(NEW)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  seeker     User          @relation("InquirySeeker", fields: [seekerId], references: [id], onDelete: Restrict)
+  lister     User          @relation("InquiryLister", fields: [listerId], references: [id], onDelete: Restrict)
+  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+
+  @@index([seekerId, createdAt])
+  @@index([listerId, createdAt])
+  @@index([propertyId])
+}
+
+model Conversation {
+  id         String    @id @default(cuid())
+  propertyId String
+  seekerId   String
+  listerId   String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  seeker     User      @relation("ConversationSeeker", fields: [seekerId], references: [id], onDelete: Restrict)
+  lister     User      @relation("ConversationLister", fields: [listerId], references: [id], onDelete: Restrict)
+  messages   Message[]
+
+  @@unique([propertyId, seekerId, listerId])
+  @@index([seekerId, updatedAt])
+  @@index([listerId, updatedAt])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  body           String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Restrict)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model Viewing {
+  id          String        @id @default(cuid())
+  propertyId  String
+  seekerId    String
+  listerId    String
+  scheduledAt DateTime
+  note        String?
+  status      ViewingStatus @default(REQUESTED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  property    Property      @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  seeker      User          @relation("ViewingSeeker", fields: [seekerId], references: [id], onDelete: Restrict)
+  lister      User          @relation("ViewingLister", fields: [listerId], references: [id], onDelete: Restrict)
+
+  @@index([seekerId, scheduledAt])
+  @@index([listerId, scheduledAt])
+  @@index([propertyId])
+}
+
+model VerificationDocument {
+  id            String             @id @default(cuid())
+  userId        String
+  documentUrl   String
+  documentType  String
+  status        VerificationStatus @default(PENDING)
+  rejectionNote String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([createdAt])
+}
+
+model PropertyDocument {
+  id            String             @id @default(cuid())
+  propertyId    String
+  documentUrl   String
+  documentType  String
+  status        VerificationStatus @default(PENDING)
+  rejectionNote String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  property      Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId, status])
+  @@index([createdAt])
+}

@@ -1,0 +1,98 @@
+name: a7-production
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+services:
+  postgres:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    env_file: ${A7_DATABASE_ENV_FILE:?Set database secret file}
+    command: ["postgres", "-c", "ssl=on", "-c", "ssl_cert_file=/tls/server.crt", "-c", "ssl_key_file=/tls/server.key", "-c", "password_encryption=scram-sha-256", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
+    volumes:
+      - database:/var/lib/postgresql/data
+      - database_tls:/tls:ro
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./init-database.sh:/docker-entrypoint-initdb.d/10-a7.sh:ro
+    networks: [database]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U a7_admin -d a7_property"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+  api:
+    image: a7-property-api:${A7_RELEASE_TAG:?Set release tag}
+    build:
+      context: ../..
+      target: runtime
+    env_file: ${A7_BACKEND_ENV_FILE:?Set backend secret file}
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      TRUST_PROXY_HOPS: "1"
+      NODE_EXTRA_CA_CERTS: /database-ca/ca.crt
+    volumes:
+      - database_ca:/database-ca:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [database, edge]
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs: ["/tmp:size=64m,mode=1777"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 30s
+    logging: *logging
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set API hostname}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME contact}
+    ports: ["80:80", "443:443", "443:443/udp"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks: [edge]
+    depends_on:
+      api:
+        condition: service_healthy
+    logging: *logging
+  tools:
+    image: a7-property-tools:${A7_RELEASE_TAG:?Set release tag}
+    build:
+      context: ../..
+      target: tools
+    profiles: [release]
+    env_file: ${A7_BACKEND_ENV_FILE:?Set backend secret file}
+    environment:
+      NODE_EXTRA_CA_CERTS: /database-ca/ca.crt
+    volumes:
+      - database_ca:/database-ca:ro
+    networks: [database, edge]
+    init: true
+  certificates:
+    image: a7-property-tools:${A7_RELEASE_TAG:?Set release tag}
+    profiles: [release]
+    user: "0"
+    entrypoint: ["sh", "/init-tls.sh"]
+    volumes:
+      - ./init-tls.sh:/init-tls.sh:ro
+      - database_tls:/tls
+      - database_ca:/ca
+    network_mode: none
+volumes:
+  database:
+  database_tls:
+  database_ca:
+  caddy_data:
+  caddy_config:
+networks:
+  database:
+    internal: true
+  edge:

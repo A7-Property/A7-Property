@@ -1,0 +1,10 @@
+[Unit]
+Description=A7 PostgreSQL backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/a7/backup.env
+ExecStart=/bin/sh /opt/a7/backend/deploy/vps/backup.sh
+UMask=0077

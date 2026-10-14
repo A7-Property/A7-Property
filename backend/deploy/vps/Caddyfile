@@ -1,0 +1,7 @@
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+{$API_DOMAIN} {
+	reverse_proxy api:4000
+}
