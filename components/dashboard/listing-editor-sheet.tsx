@@ -1,6 +1,6 @@
 "use client";
 
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Camera, ExternalLink, Loader2, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -132,6 +132,7 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
   const [uploading, setUploading] = useState(0);
   const [docUploadError, setDocUploadError] = useState("");
   const [uploadingDocs, setUploadingDocs] = useState(0);
+  const [showOwnershipSample, setShowOwnershipSample] = useState(false);
 
   // Resetting on open rather than on mount keeps the state fresh across each
   // "Create" / "Edit" invocation without rebuilding the whole sheet.
@@ -145,6 +146,7 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
       setUploaded([]);
       setUploading(0);
       setUploadingDocs(0);
+      setShowOwnershipSample(false);
       setDraft(property ? draftFromProperty(property) : { ...emptyDraft, purpose: initialPurpose });
     });
   }, [open, property, initialPurpose]);
@@ -492,20 +494,81 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
 
           <div>
             <span className={labelClass}>{tx("Property Ownership Documents", "အိမ်ပိုင်ဆိုင်မှု စာရွက်စာတမ်းများ")}</span>
+            <Button
+              type="button"
+              variant="outline"
+              className="mb-3 w-full justify-center"
+              aria-expanded={showOwnershipSample}
+              aria-controls="ownership-document-sample"
+              onClick={() => setShowOwnershipSample((visible) => !visible)}
+            >
+              {showOwnershipSample
+                ? tx("Hide Sample Ownership Document", "ပိုင်ဆိုင်မှုစာရွက်စာတမ်း နမူနာကို ပိတ်ရန်")
+                : tx("View Sample Ownership Document", "ပိုင်ဆိုင်မှုစာရွက်စာတမ်း နမူနာကြည့်ရန်")}
+            </Button>
+            {showOwnershipSample && (
+              <figure id="ownership-document-sample" className="mb-3 overflow-hidden rounded-2xl border border-[#D0D6E0] bg-white">
+                <div className="relative aspect-[4/3] overflow-hidden bg-[#F2F4F7]">
+                  <ProgressiveImage
+                    src="/images/property-ownership-document-sample.png"
+                    alt={tx("Sample Myanmar property ownership document", "မြန်မာ အိမ်ပိုင်ဆိုင်မှုစာရွက်စာတမ်း နမူနာ")}
+                    fill
+                    sizes="(max-width: 540px) 100vw, 480px"
+                    className="object-contain object-top"
+                    loading="lazy"
+                  />
+                </div>
+                <figcaption className="flex items-center justify-between gap-3 px-3 py-2.5 text-[10px] leading-5 text-[#667085]">
+                  <span>{tx(
+                    "Example only. Your ownership evidence may look different.",
+                    "နမူနာအဖြစ်သာ ဖော်ပြထားပါသည်။ သင့်ပိုင်ဆိုင်မှုအထောက်အထား ပုံစံကွဲပြားနိုင်ပါသည်။",
+                  )}</span>
+                  <a
+                    href="/images/property-ownership-document-sample.png"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 font-semibold text-[#123B73] hover:bg-[#EAF4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#123B73]"
+                  >
+                    <ExternalLink className="size-4" />
+                    {tx("Full size", "ပုံအပြည့်")}
+                  </a>
+                </figcaption>
+              </figure>
+            )}
             {draft.documents.length > 0 && (
               <div className="mb-3 grid grid-cols-2 gap-2">
                 {draft.documents.map((doc, index) => (
-                  <div key={index} className="relative flex min-h-16 items-center justify-between overflow-hidden rounded-xl border border-[#D0D6E0] bg-[#F8FBFF] p-2">
-                    <div className="flex flex-col items-start gap-1 overflow-hidden pr-8">
-                      <span className="truncate text-xs font-medium text-[#344054]">Document {index + 1}</span>
-                    </div>
+                  <div key={index} className="relative overflow-hidden rounded-xl border border-[#D0D6E0] bg-[#F8FBFF]">
+                    <a
+                      href={doc.documentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#123B73]"
+                      aria-label={tx(`Open ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1} ကို ဖွင့်ကြည့်ရန်`)}
+                    >
+                      <span className="relative block aspect-[4/3] overflow-hidden bg-[#F2F4F7]">
+                        <ProgressiveImage
+                          src={doc.documentUrl}
+                          alt={tx(`Ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1}`)}
+                          fill
+                          sizes="(max-width: 540px) 50vw, 230px"
+                          className="object-cover transition-transform group-hover:scale-[1.02]"
+                          loading="lazy"
+                        />
+                      </span>
+                      <span className="flex min-h-11 items-center gap-1.5 px-3 text-[11px] font-medium text-[#344054]">
+                        <ExternalLink className="size-3.5 shrink-0" />
+                        {tx(`Document ${index + 1}`, `စာရွက်စာတမ်း ${index + 1}`)}
+                      </span>
+                    </a>
                     {(doc.documentAssetId || doc.documentId) && (
                       <button
                         type="button"
                         onClick={() => removeUploadedDoc(index)}
-                        className="absolute right-2 top-2 inline-flex size-6 items-center justify-center rounded-full bg-black/10 text-black hover:bg-black/20"
+                        className="absolute right-1 top-1 inline-flex size-11 items-center justify-center rounded-full bg-black/65 text-white shadow-md hover:bg-black/80"
+                        aria-label={tx(`Remove ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1} ကို ဖျက်ရန်`)}
                       >
-                        <Trash2 className="size-3" />
+                        <Trash2 className="size-4" />
                       </button>
                     )}
                   </div>

@@ -110,6 +110,11 @@ test("reply/read and attachment contracts prevent the observed status and docume
   const sheet = await read("components/dashboard/listing-editor-sheet.tsx");
   assert.match(sheet, /disabled=\{busy \|\| submitting \|\| uploading > 0 \|\| uploadingDocs > 0\}/);
   assert.match(sheet, /documentId: d\.id/);
+  assert.match(sheet, /property-ownership-document-sample\.png/);
+  assert.match(sheet, /View Sample Ownership Document/);
+  assert.match(sheet, /aria-expanded=\{showOwnershipSample\}/);
+  assert.match(sheet, /src=\{doc\.documentUrl\}/);
+  assert.match(sheet, /Open ownership document/);
   assert.doesNotMatch(sheet, /application\/pdf/);
 });
 
