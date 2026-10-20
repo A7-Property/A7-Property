@@ -24,6 +24,12 @@ export class RegisterDto {
   @MaxLength(80)
   lastName!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(5)
+  @MaxLength(500)
+  address!: string;
+
   /** Only self-service roles. ADMIN exists but is reachable only through the bootstrap script. */
   @ApiProperty({ enum: [UserRole.SEEKER, UserRole.LISTER] })
   @IsIn([UserRole.SEEKER, UserRole.LISTER])

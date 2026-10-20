@@ -39,7 +39,7 @@ describeIfDatabase("Marketplace (e2e)", () => {
   async function actor(role: typeof UserRole.SEEKER | typeof UserRole.LISTER, options: { verified?: boolean } = {}): Promise<Actor> {
     const email = uniqueEmail(role.toLowerCase());
     const response = await request(server()).post("/api/v1/auth/register")
-      .send({ email, password: strongPassword, firstName: "Test", lastName: role === UserRole.SEEKER ? "Seeker" : "Lister", role })
+      .send({ email, password: strongPassword, firstName: "Test", lastName: role === UserRole.SEEKER ? "Seeker" : "Lister", address: "Test address, Yangon", role })
       .expect(201);
     const id = response.body.data.user.id as string;
     if (options.verified !== false) await prisma.user.update({ where: { id }, data: { emailVerifiedAt: new Date() } });

@@ -21,7 +21,7 @@ describe("Profile photo upload", () => {
 
   it("persists a seeker avatar, replaces it and removes the previous asset", async () => {
     const registered = await request(app.getHttpServer()).post("/api/v1/auth/register").send({
-      email: uniqueEmail("avatar"), password: strongPassword, firstName: "Photo", lastName: "User", role: "SEEKER",
+      email: uniqueEmail("avatar"), password: strongPassword, firstName: "Photo", lastName: "User", address: "Test address, Yangon", role: "SEEKER",
     }).expect(201);
     const token = registered.body.data.accessToken;
     const id = registered.body.data.user.id;

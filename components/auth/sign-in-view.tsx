@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, Eye, EyeOff, Globe2, Home, LockKeyhole, Loader2, Mail, Search, Tag } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, ChevronDown, Eye, EyeOff, Globe2, LockKeyhole, Loader2, Mail, MapPin, Search, Tag, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -36,8 +36,13 @@ const copy = {
     lister: "Property lister",
     continueRole: "Continue",
     email: "Email address",
-    fullName: "Full name",
-    fullNamePlaceholder: "Enter your name",
+    firstName: "First name",
+    firstNamePlaceholder: "Enter your first name",
+    lastName: "Last name",
+    lastNamePlaceholder: "Enter your last name",
+    address: "Address",
+    addressPlaceholder: "Enter your home address",
+    requiredDetails: "Enter your first name, last name, and address.",
     placeholder: "Enter your email",
     invalidEmail: "Enter a valid email address.",
     continue: "Continue",
@@ -102,8 +107,13 @@ const copy = {
     lister: "အိမ်တင်သူ",
     continueRole: "ဆက်လုပ်မည်",
     email: "အီးမေးလ်လိပ်စာ",
-    fullName: "အမည်",
-    fullNamePlaceholder: "သင့်အမည် ရိုက်ထည့်ပါ",
+    firstName: "အမည်",
+    firstNamePlaceholder: "သင့်အမည် ရိုက်ထည့်ပါ",
+    lastName: "မျိုးရိုးအမည်",
+    lastNamePlaceholder: "သင့်မျိုးရိုးအမည် ရိုက်ထည့်ပါ",
+    address: "နေရပ်လိပ်စာ",
+    addressPlaceholder: "သင့်နေရပ်လိပ်စာ ရိုက်ထည့်ပါ",
+    requiredDetails: "အမည်၊ မျိုးရိုးအမည်နှင့် နေရပ်လိပ်စာတို့ကို ဖြည့်ပါ။",
     placeholder: "အီးမေးလ် ရိုက်ထည့်ပါ",
     invalidEmail: "မှန်ကန်သော အီးမေးလ်လိပ်စာ ရိုက်ထည့်ပါ။",
     continue: "ဆက်လုပ်မည်",
@@ -211,7 +221,9 @@ function SignInView() {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [step, setStep] = useState<AuthStep>("role");
   const [accountType, setAccountType] = useState<AccountType>(searchParams.get("role") === "lister" ? "lister" : "seeker");
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [address, setAddress] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -224,6 +236,7 @@ function SignInView() {
   const text = copy[language];
   const [errorMessage, setErrorMessage] = useState("");
   const hasError = touched && !emailPattern.test(email);
+  const missingRegistrationDetails = mode === "create" && (!firstName.trim() || !lastName.trim() || !address.trim());
 
   const passwordTooWeak = password.length < serverPasswordLength || !serverPasswordPattern.test(password);
   // A weak password only blocks account creation. Sign-in must send whatever the
@@ -268,7 +281,9 @@ function SignInView() {
         const result = await signUpWithPassword({
           email: email.trim(),
           password,
-          fullName: fullName.trim() || email.trim().split("@")[0] || "User",
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          address: address.trim(),
           accountType,
         });
         setNotice(result.verificationEmailSent ? text.verifySent : text.verifyNotSent);
@@ -320,6 +335,7 @@ function SignInView() {
     }
     if (!emailPattern.test(email)) return;
     if (step === "email") {
+      if (missingRegistrationDetails) return;
       setStep("password");
       setTouched(false);
       setNotice("");
@@ -367,7 +383,9 @@ function SignInView() {
     setPassword("");
     setConfirmPassword("");
     setEmail("");
-    setFullName("");
+    setFirstName("");
+    setLastName("");
+    setAddress("");
     setNotice("");
   }
 
@@ -466,20 +484,32 @@ function SignInView() {
               )}
 
               {step === "email" && mode === "create" && (
-                <div key="registration-name">
-                  <label htmlFor="full-name" className="text-[13px] font-semibold text-[#101828]">{text.fullName || "Full name"}</label>
-                  <div className="mt-2 mb-3 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
-                    <Home className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
-                    <input
-                      id="full-name"
-                      name="name"
-                      type="text"
-                      autoComplete="name"
-                      value={fullName}
-                      onChange={(event) => setFullName(event.target.value)}
-                      placeholder={text.fullNamePlaceholder || "Enter your name"}
-                      className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none"
-                    />
+                <div key="registration-details" className="space-y-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="first-name" className="text-[13px] font-semibold text-[#101828]">{text.firstName}</label>
+                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                        <UserRound className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
+                        <input id="first-name" name="given-name" type="text" autoComplete="given-name" maxLength={80} required value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder={text.firstNamePlaceholder} className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label htmlFor="last-name" className="text-[13px] font-semibold text-[#101828]">{text.lastName}</label>
+                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                        <UserRound className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
+                        <input id="last-name" name="family-name" type="text" autoComplete="family-name" maxLength={80} required value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder={text.lastNamePlaceholder} className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none" />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="address" className="text-[13px] font-semibold text-[#101828]">{text.address}</label>
+                    <div className="mt-2 flex min-h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                      <MapPin className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
+                      <textarea id="address" name="street-address" autoComplete="street-address" maxLength={500} required rows={2} value={address} onChange={(event) => setAddress(event.target.value)} placeholder={text.addressPlaceholder} className="min-h-[52px] min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-3 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="min-h-5">
+                    {touched && missingRegistrationDetails && <p className="text-xs text-[#C4322B]" role="alert">{text.requiredDetails}</p>}
                   </div>
                 </div>
               )}

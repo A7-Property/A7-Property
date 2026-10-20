@@ -31,6 +31,7 @@ describeIfDatabase("Authentication (e2e)", () => {
       password: strongPassword,
       firstName: "Aye",
       lastName: "Chan",
+      address: "No. 12, Bahan, Yangon",
       role: UserRole.SEEKER,
       ...overrides,
     });
@@ -38,6 +39,7 @@ describeIfDatabase("Authentication (e2e)", () => {
   it("registers a seeker, returns an access token and sets an HttpOnly refresh cookie", async () => {
     const response = await register().expect(201);
     expect(response.body.data.user.role).toBe(UserRole.SEEKER);
+    expect(response.body.data.user.address).toBe("No. 12, Bahan, Yangon");
     expect(response.body.data.user).not.toHaveProperty("passwordHash");
     expect(typeof response.body.data.accessToken).toBe("string");
 

@@ -164,7 +164,7 @@ describeIfDatabase("Platform hardening (e2e)", () => {
   it("revokes a single session without touching the others", async () => {
     const email = uniqueEmail("sessions");
     await request(server()).post("/api/v1/auth/register")
-      .send({ email, password: strongPassword, firstName: "Many", lastName: "Devices", role: UserRole.SEEKER })
+      .send({ email, password: strongPassword, firstName: "Many", lastName: "Devices", address: "Test address, Yangon", role: UserRole.SEEKER })
       .expect(201);
     const second = await request(server()).post("/api/v1/auth/login").send({ email, password: strongPassword }).expect(200);
     const token = second.body.data.accessToken as string;
@@ -182,7 +182,7 @@ describeIfDatabase("Platform hardening (e2e)", () => {
   it("deactivating an account signs it out and pauses its listings", async () => {
     const email = uniqueEmail("leaving");
     const registered = await request(server()).post("/api/v1/auth/register")
-      .send({ email, password: strongPassword, firstName: "Going", lastName: "Away", role: UserRole.LISTER })
+      .send({ email, password: strongPassword, firstName: "Going", lastName: "Away", address: "Test address, Yangon", role: UserRole.LISTER })
       .expect(201);
     const token = registered.body.data.accessToken as string;
 

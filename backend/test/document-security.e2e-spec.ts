@@ -19,7 +19,7 @@ describe("Private documents and attachment integrity", () => {
   afterAll(async () => { await app.close(); await rm(directory, { recursive: true, force: true }); });
   beforeEach(async () => { await resetDatabase(prisma); resetRateLimits(app); });
   async function actor(role: "SEEKER" | "LISTER" = "LISTER") {
-    const result = await request(server()).post("/api/v1/auth/register").send({ email: uniqueEmail("document-audit"), password: strongPassword, firstName: "Document", lastName: "Test", role }).expect(201);
+    const result = await request(server()).post("/api/v1/auth/register").send({ email: uniqueEmail("document-audit"), password: strongPassword, firstName: "Document", lastName: "Test", address: "Test address, Yangon", role }).expect(201);
     return { id: result.body.data.user.id as string, token: result.body.data.accessToken as string };
   }
   async function upload(token: string, kind = "property-document") {

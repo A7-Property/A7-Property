@@ -7,6 +7,7 @@ export interface ApiUser {
   email: string;
   firstName: string;
   lastName: string;
+  address: string;
   role: ApiRole;
   phone: string | null;
   avatarUrl: string | null;
@@ -28,7 +29,7 @@ export interface ApiSession {
 interface AuthResult { user: ApiUser; accessToken: string; expiresIn: number; verificationEmailSent?: boolean }
 
 /** Only self-service roles: the backend rejects ADMIN at registration. */
-export async function register(input: { email: string; password: string; firstName: string; lastName: string; role: "SEEKER" | "LISTER" }) {
+export async function register(input: { email: string; password: string; firstName: string; lastName: string; address: string; role: "SEEKER" | "LISTER" }) {
   const result = await apiRequest<AuthResult>("/auth/register", { method: "POST", body: input, auth: false });
   setAccessToken(result.accessToken);
   return { user: result.user, verificationEmailSent: result.verificationEmailSent ?? false };

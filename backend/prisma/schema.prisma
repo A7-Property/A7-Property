@@ -105,6 +105,7 @@ model User {
   passwordHash        String
   firstName           String
   lastName            String
+  address             String                 @default("")
   phone               String?
   role                UserRole
   avatarUrl           String?

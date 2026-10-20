@@ -38,7 +38,7 @@ interface AuthContextValue {
   updateProfile: (patch: Partial<AuthUser>) => void;
   /** Server mode: real credentials. Throws ApiError on failure. */
   signInWithPassword: (email: string, password: string) => Promise<AuthUser>;
-  signUpWithPassword: (input: { email: string; password: string; fullName: string; accountType: AccountType }) => Promise<{ user: AuthUser; verificationEmailSent: boolean }>;
+  signUpWithPassword: (input: { email: string; password: string; firstName: string; lastName: string; address: string; accountType: AccountType }) => Promise<{ user: AuthUser; verificationEmailSent: boolean }>;
   refreshUser: () => Promise<AuthUser | null>;
 }
 
@@ -112,13 +112,13 @@ function AuthProvider({ children }: { children: React.ReactNode }) {
     return nextUser;
   }, [persist]);
 
-  const signUpWithPassword = useCallback(async (input: { email: string; password: string; fullName: string; accountType: AccountType }) => {
-    const [firstName, ...rest] = input.fullName.trim().split(/\s+/);
+  const signUpWithPassword = useCallback(async (input: { email: string; password: string; firstName: string; lastName: string; address: string; accountType: AccountType }) => {
     const result = await authApi.register({
       email: input.email.trim().toLowerCase(),
       password: input.password,
-      firstName: firstName || input.email.split("@")[0],
-      lastName: rest.join(" ") || "-",
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      address: input.address.trim(),
       role: input.accountType === "seeker" ? "SEEKER" : "LISTER",
     });
     const nextUser = fromApiUser(result.user);

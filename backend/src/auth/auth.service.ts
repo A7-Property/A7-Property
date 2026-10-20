@@ -32,7 +32,7 @@ function hashesMatch(a: string, b: string) {
 }
 
 const publicUser = {
-  id: true, email: true, firstName: true, lastName: true, phone: true, role: true,
+  id: true, email: true, firstName: true, lastName: true, address: true, phone: true, role: true,
   avatarUrl: true, isActive: true, emailVerifiedAt: true, isAgent: true, phoneVerified: true,
   createdAt: true, updatedAt: true,
   verificationDocs: { select: { status: true } },
@@ -57,7 +57,7 @@ export class AuthService {
     if (await this.prisma.user.findUnique({ where: { email }, select: { id: true } })) throw new ConflictException("Email already registered");
     try {
       const user = await this.prisma.user.create({
-        data: { email, passwordHash: await argon2.hash(input.password), firstName: input.firstName.trim(), lastName: input.lastName.trim(), role: input.role },
+        data: { email, passwordHash: await argon2.hash(input.password), firstName: input.firstName.trim(), lastName: input.lastName.trim(), address: input.address.trim(), role: input.role },
         select: publicUser,
       });
       const tokens = await this.issueTokens(user.id, user.role, request);

@@ -86,6 +86,25 @@ test("sign-in follows the shared language preference and offers no fake provider
   assert.doesNotMatch(signIn, /demo@a7\.local|Continue with Google|socialProvider/);
 });
 
+test("seeker and lister registration collect separate names and a persisted address", async () => {
+  const [signIn, provider, authClient, registerDto] = await Promise.all([
+    source("components/auth/sign-in-view.tsx"),
+    source("components/auth/auth-provider.tsx"),
+    source("lib/api/auth.ts"),
+    source("backend/src/auth/dto.ts"),
+  ]);
+
+  assert.match(signIn, /id="first-name"[\s\S]*?autoComplete="given-name"/);
+  assert.match(signIn, /id="last-name"[\s\S]*?autoComplete="family-name"/);
+  assert.match(signIn, /id="address"[\s\S]*?autoComplete="street-address"/);
+  assert.match(signIn, /missingRegistrationDetails/);
+  assert.match(provider, /firstName: input\.firstName\.trim\(\)/);
+  assert.match(provider, /lastName: input\.lastName\.trim\(\)/);
+  assert.match(provider, /address: input\.address\.trim\(\)/);
+  assert.match(authClient, /firstName: string; lastName: string; address: string;/);
+  assert.match(registerDto, /@MinLength\(5\)[\s\S]*?address!:\s*string/);
+});
+
 test("seeker and lister profile destinations match their labels", async () => {
   const profile = await source("components/mobile/profile-experience.tsx");
 

@@ -20,7 +20,7 @@ export class SubmitVerificationDto {
   @IsString() @MinLength(1) @MaxLength(50) documentType!: string;
 }
 
-const publicUser = { id: true, email: true, firstName: true, lastName: true, phone: true, role: true, avatarUrl: true, isAgent: true, phoneVerified: true, emailVerifiedAt: true, createdAt: true, updatedAt: true, verificationDocs: { select: { status: true } } } as const;
+const publicUser = { id: true, email: true, firstName: true, lastName: true, address: true, phone: true, role: true, avatarUrl: true, isAgent: true, phoneVerified: true, emailVerifiedAt: true, createdAt: true, updatedAt: true, verificationDocs: { select: { status: true } } } as const;
 
 @ApiTags("Users")
 @ApiBearerAuth()

@@ -10,7 +10,7 @@ import { presentProperty, propertyInclude } from "../properties/properties.servi
 import { AdminPropertyQueryDto, AdminUserQueryDto, AdminUserStatusDto, AdminVerificationDocumentQueryDto, AdminVerificationDocumentDecisionDto, AuditLogQueryDto, VerificationDecisionDto } from "./dto";
 
 const adminUserSelect = {
-  id: true, email: true, firstName: true, lastName: true, phone: true, role: true,
+  id: true, email: true, firstName: true, lastName: true, address: true, phone: true, role: true,
   isActive: true, isAgent: true, emailVerifiedAt: true, lockedUntil: true, lastLoginAt: true,
   deactivatedAt: true, createdAt: true,
   verificationDocs: true,
