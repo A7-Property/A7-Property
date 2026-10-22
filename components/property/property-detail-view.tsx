@@ -17,6 +17,10 @@ import { contactVerificationLabel, formatPropertyPrice, listingVerificationLabel
 import { PropertyTrustBadge } from "@/components/property/property-card-system";
 import { cn } from "@/lib/utils";
 import { useSavedHomes } from "@/hooks/use-saved-homes";
+import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
+import { ApiError, isApiConfigured } from "@/lib/api/client";
+import { createPropertyReport, type PropertyReportReason } from "@/lib/api/reports";
 
 function PropertyDetailView({ property }: { property: Property }) {
   const { tx, isMyanmar } = useLanguage();
@@ -26,6 +30,7 @@ function PropertyDetailView({ property }: { property: Property }) {
   const { isSaved, toggleSaved } = useSavedHomes();
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [inquiryMode, setInquiryMode] = useState<InquiryMode>("schedule");
+  const [reportOpen, setReportOpen] = useState(false);
 
   // Recently viewed stays on the device: it is a browsing convenience, not
   // account data, and there is no endpoint for it.
@@ -62,11 +67,16 @@ function PropertyDetailView({ property }: { property: Property }) {
   }
 
   function reportListing() {
-    toast({
-      tone: "info",
-      title: tx("Safety note recorded on this device", "လုံခြုံရေးမှတ်ချက်ကို ဤစက်တွင် မှတ်ထားသည်"),
-      description: tx("This frontend demo did not send a moderation report.", "ဤ frontend demo မှ moderation report ကို server သို့ မပို့ထားပါ။"),
-    });
+    if (!isApiConfigured()) {
+      toast({ tone: "info", title: tx("Reporting is unavailable", "တိုင်ကြားမှု မရရှိနိုင်ပါ"), description: tx("This build has no moderation server configured.", "ဤ build တွင် moderation server မချိတ်ဆက်ထားပါ။") });
+      return;
+    }
+    if (status !== "authenticated" || !user) {
+      window.sessionStorage.setItem("a7-auth-return-to", `/properties/${property.id}`);
+      router.push("/sign-in");
+      return;
+    }
+    setReportOpen(true);
   }
 
   const price = formatPropertyPrice(property, isMyanmar ? "my" : "en");
@@ -130,8 +140,42 @@ function PropertyDetailView({ property }: { property: Property }) {
       </div>
 
       <InquirySheet open={inquiryOpen} onOpenChange={setInquiryOpen} mode={inquiryMode} property={property} />
+      <ReportListingModal open={reportOpen} onOpenChange={setReportOpen} property={property} tx={tx} />
     </div>
   );
+}
+
+const reportReasons: Array<{ value: PropertyReportReason; en: string; my: string }> = [
+  { value: "SUSPECTED_SCAM", en: "Suspected scam", my: "လိမ်လည်မှုဟု သံသယရှိသည်" },
+  { value: "INCORRECT_INFORMATION", en: "Incorrect information", my: "အချက်အလက် မမှန်ကန်ပါ" },
+  { value: "DUPLICATE_LISTING", en: "Duplicate listing", my: "ထပ်နေသော အိမ်စာရင်း" },
+  { value: "UNAVAILABLE_PROPERTY", en: "Property is unavailable", my: "အိမ် မရရှိနိုင်တော့ပါ" },
+  { value: "OTHER", en: "Another safety concern", my: "အခြား လုံခြုံရေးစိုးရိမ်ချက်" },
+];
+
+function ReportListingModal({ open, onOpenChange, property, tx }: { open: boolean; onOpenChange: (open: boolean) => void; property: Property; tx: (english: string, myanmar: string) => string }) {
+  const { toast } = useToast();
+  const [reason, setReason] = useState<PropertyReportReason>("SUSPECTED_SCAM");
+  const [details, setDetails] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function submit() {
+    setBusy(true); setError("");
+    try {
+      await createPropertyReport(property.id, { reason, details });
+      onOpenChange(false); setDetails("");
+      toast({ tone: "success", title: tx("Report sent for review", "တိုင်ကြားချက်ကို စိစစ်ရန် ပို့ပြီးပါပြီ"), description: tx("A moderator will review the listing. It is not removed automatically.", "Moderator က အိမ်စာရင်းကို စိစစ်ပါမည်။ အလိုအလျောက် ဖယ်ရှားမည်မဟုတ်ပါ။") });
+    } catch (caught) {
+      setError(caught instanceof ApiError ? caught.message : tx("Could not send the report. Please try again.", "တိုင်ကြားချက် မပို့နိုင်ပါ။ ထပ်မံကြိုးစားပါ။"));
+    } finally { setBusy(false); }
+  }
+  return <Modal open={open} onOpenChange={onOpenChange} title={tx("Report this listing", "ဤအိမ်စာရင်းကို တိုင်ကြားရန်")} description={tx("Choose the concern that best describes the issue.", "ပြဿနာနှင့် အနီးစပ်ဆုံးအကြောင်းရင်းကို ရွေးပါ။")} footer={<Button className="w-full" disabled={busy} onClick={() => void submit()}>{busy ? tx("Sending…", "ပို့နေသည်…") : tx("Send report", "တိုင်ကြားချက်ပို့ရန်")}</Button>}>
+    <div className="space-y-4 p-5">
+      <fieldset className="space-y-2"><legend className="mb-2 text-sm font-semibold">{tx("Reason", "အကြောင်းရင်း")}</legend>{reportReasons.map((option) => <label key={option.value} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-a7-line bg-white px-3 text-sm"><input type="radio" name="report-reason" value={option.value} checked={reason === option.value} onChange={() => setReason(option.value)} /><span>{tx(option.en, option.my)}</span></label>)}</fieldset>
+      <label className="block text-sm font-semibold">{tx("Additional details (optional)", "အသေးစိတ်အချက်အလက် (မဖြစ်မနေမဟုတ်)")}<textarea maxLength={1000} rows={4} value={details} onChange={(event) => setDetails(event.target.value)} className="mt-2 w-full rounded-xl border border-a7-line bg-white p-3 font-normal outline-none focus:border-a7-blue" /></label>
+      {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+    </div>
+  </Modal>;
 }
 
 function PropertyFact({ icon: Icon, value, label, valueClassName }: { icon: typeof BedDouble; value: string | number; label: string; valueClassName?: string }) {

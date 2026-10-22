@@ -72,9 +72,28 @@ test("property detail exposes split conversion and defers the interactive map", 
 
   assert.match(detail, /tx\("Message", "စာပို့ရန်"\)/);
   assert.match(detail, /tx\("Request viewing", "အိမ်ကြည့်ရန်"\)/);
-  assert.match(detail, /frontend demo did not send a moderation report/);
+  assert.match(detail, /createPropertyReport\(property\.id/);
+  assert.match(detail, /A moderator will review the listing\. It is not removed automatically\./);
+  assert.match(detail, /This build has no moderation server configured\./);
   assert.match(sections, /expanded \? \([\s\S]*?<PropertyMap/);
   assert.match(sections, /Approximate area preview/);
+});
+
+test("property reports and saved-search alerts stay server-backed and moderated", async () => {
+  const [schema, reports, maintenance, savedSearches, admin] = await Promise.all([
+    source("backend/prisma/schema.prisma"),
+    source("backend/src/reports/reports.service.ts"),
+    source("backend/src/maintenance/maintenance.service.ts"),
+    source("components/web/saved-searches.tsx"),
+    source("components/dashboard/admin/admin-dashboard.tsx"),
+  ]);
+  assert.match(schema, /model PropertyReport/);
+  assert.match(reports, /You already have a pending report for this listing/);
+  assert.match(maintenance, /saved-search-alerts/);
+  assert.match(maintenance, /updatedAt: \{ gt: search\.lastMatchedAt \?\? search\.createdAt/);
+  assert.match(maintenance, /lastMatchedAt: \{ equals: search\.lastMatchedAt \}/);
+  assert.match(savedSearches, /Email me new matches/);
+  assert.match(admin, /Pending Listing Reports/);
 });
 
 test("sign-in follows the shared language preference and offers no fake provider sign-in", async () => {

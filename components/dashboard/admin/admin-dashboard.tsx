@@ -4,7 +4,7 @@ import { PrivateDocumentButton } from "@/components/ui/private-document-button";
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { ShieldCheck, UserRound, Building2, Check, X, Lock, Unlock, Trash2 } from "lucide-react";
+import { ShieldCheck, UserRound, Building2, Check, X, Lock, Unlock, Trash2, Flag } from "lucide-react";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { formatPropertyPrice } from "@/lib/properties";
 import * as adminApi from "@/lib/api/admin";
-import type { AdminOverview, AdminProperty, AuditLogEntry, AdminUser } from "@/lib/api/admin";
+import type { AdminOverview, AdminProperty, AdminPropertyReport, AuditLogEntry, AdminUser } from "@/lib/api/admin";
 
 export function AdminDashboard() {
   const { user } = useAuth();
@@ -28,6 +28,7 @@ export function AdminDashboard() {
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
+  const [reports, setReports] = useState<AdminPropertyReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProperty, setSelectedProperty] = useState<AdminProperty | null>(null);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
@@ -43,6 +44,8 @@ export function AdminDashboard() {
           setProperties(await adminApi.getProperties("PENDING"));
         } else if (section === "users") {
           setUsers(await adminApi.getUsers(roleFilter === "ALL" ? undefined : roleFilter));
+        } else if (section === "reports") {
+          setReports(await adminApi.getPropertyReports());
         } else if (section === "audit") {
           setLogs(await adminApi.getAuditLogs());
         }
@@ -62,6 +65,15 @@ export function AdminDashboard() {
       if (selectedProperty?.id === id) setSelectedProperty(null);
     } catch (err) {
       console.error("Failed to verify property", err);
+    }
+  };
+
+  const handleReportDecision = async (id: string, status: "RESOLVED" | "DISMISSED") => {
+    try {
+      await adminApi.decidePropertyReport(id, status);
+      setReports((current) => current.filter((report) => report.id !== id));
+    } catch (err) {
+      console.error("Failed to review property report", err);
     }
   };
 
@@ -152,6 +164,7 @@ export function AdminDashboard() {
                 change={`${overview.inquiries.total} total`}
                 icon={ShieldCheck}
               />
+              <MetricCard label={tx("Pending Reports", "စိစစ်ရန် တိုင်ကြားချက်များ")} value={overview.reports.pending.toString()} change={tx("Needs moderation", "စိစစ်ရန်လိုသည်")} icon={Flag} />
             </div>
           )}
 
@@ -183,6 +196,28 @@ export function AdminDashboard() {
                   </Card>
                 ))
               )}
+            </div>
+          )}
+
+          {section === "reports" && (
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold">{tx("Pending Listing Reports", "စိစစ်ရန်ကျန်သော အိမ်စာရင်းတိုင်ကြားချက်များ")}</h2>
+              {reports.length === 0 ? <p className="text-[#667085]">{tx("No reports are waiting for review.", "စိစစ်ရန် တိုင်ကြားချက်မရှိပါ။")}</p> : reports.map((report) => (
+                <Card key={report.id}>
+                  <CardContent className="space-y-4 p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div><h3 className="font-semibold">{report.property.title}</h3><p className="mt-1 text-sm text-[#667085]">{report.reason.replaceAll("_", " ")}</p></div>
+                      <Badge variant="warning">{report.status}</Badge>
+                    </div>
+                    {report.details && <p className="rounded-xl bg-[#F8FBFF] p-3 text-sm text-[#475467]">{report.details}</p>}
+                    <p className="text-xs text-[#667085]">{tx("Reported by", "တိုင်ကြားသူ")}: {report.reporter.firstName} {report.reporter.lastName} ({report.reporter.email})</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button className="h-9 bg-green-700 text-xs hover:bg-green-800" onClick={() => void handleReportDecision(report.id, "RESOLVED")}><Check className="size-4" />{tx("Resolve", "ဖြေရှင်းပြီး")}</Button>
+                      <Button variant="outline" className="h-9 text-xs" onClick={() => void handleReportDecision(report.id, "DISMISSED")}><X className="size-4" />{tx("Dismiss", "ပယ်ဖျက်ရန်")}</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
 

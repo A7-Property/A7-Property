@@ -7,6 +7,7 @@ export interface AdminOverview {
   properties: { total: number; published: number; pendingReview: number; verified: number };
   inquiries: { total: number; new: number };
   viewings: { total: number; requested: number };
+  reports: { pending: number };
 }
 
 export interface AdminProperty extends Omit<Property, "owner"> {
@@ -83,6 +84,22 @@ export const deleteUser = (id: string) =>
   });
 
 export const getAuditLogs = () => apiRequest<AuditLogEntry[]>("/admin/audit-logs");
+
+export interface AdminPropertyReport {
+  id: string;
+  reason: "SUSPECTED_SCAM" | "INCORRECT_INFORMATION" | "DUPLICATE_LISTING" | "UNAVAILABLE_PROPERTY" | "OTHER";
+  details: string;
+  status: "PENDING" | "RESOLVED" | "DISMISSED";
+  createdAt: string;
+  property: { id: string; title: string; status: string; verificationStatus: string };
+  reporter: { id: string; email: string; firstName: string; lastName: string };
+}
+
+export const getPropertyReports = (status = "PENDING") =>
+  apiRequest<AdminPropertyReport[]>(`/admin/property-reports?status=${encodeURIComponent(status)}`);
+
+export const decidePropertyReport = (id: string, status: "RESOLVED" | "DISMISSED", resolutionNote?: string) =>
+  apiRequest<AdminPropertyReport>(`/admin/property-reports/${encodeURIComponent(id)}`, { method: "PATCH", body: { status, resolutionNote } });
 
 export const setVerificationDocumentStatus = (id: string, status: "VERIFIED" | "REJECTED", rejectionNote?: string) =>
   apiRequest<VerificationDocument>(`/admin/verification-documents/${id}/status`, {

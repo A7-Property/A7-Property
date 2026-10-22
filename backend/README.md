@@ -37,6 +37,7 @@ All routes are under `/api/v1`. Every response body is `{ "data": ... }`; pagina
 | Auth | `POST register`, `login`, `refresh`, `logout`, `logout-all`, `change-password`, `deactivate`, `verify-email`, `resend-verification`, `forgot-password`, `reset-password`, `change-email/request`, `change-email/confirm`; `GET me`, `sessions`; `DELETE sessions/:id`, `change-email` |
 | Properties | `GET /properties` (filters below), `GET /properties/:id`, `GET /properties/:id/similar`, `GET /properties/mine`, `GET /properties/mine/overview`, `POST /properties`, `PATCH /properties/:id`, `DELETE /properties/:id`, `POST /properties/:id/publish`, `POST /properties/:id/pause`, `POST /properties/:id/confirm-availability`, `PATCH /properties/:id/availability-status` |
 | Saved | `GET /saved-properties`, `GET /saved-properties/ids`, `POST`/`DELETE /saved-properties/:propertyId`; `GET`/`POST /saved-searches`, `PATCH`/`DELETE /saved-searches/:id` |
+| Reports | `POST /properties/:propertyId/reports`; admin `GET /admin/property-reports`, `PATCH /admin/property-reports/:id` |
 | Inquiries | `POST /inquiries`, `GET /inquiries`, `GET /inquiries/unread-count`, `GET /inquiries/:id`, `PATCH /inquiries/:id/status` |
 | Messages | `GET /conversations`, `GET /conversations/unread-count`, `POST /conversations` (seeker), `POST /conversations/from-viewing` (lister), `GET /conversations/:id`, `GET`/`POST /conversations/:id/messages`, `PATCH /conversations/:id/read`, `PATCH /messages/:id/read` |
 | Viewings | `POST /viewings`, `GET /viewings`, `GET /viewings/:id`, `PATCH /viewings/:id/status`, `PATCH /viewings/:id/reschedule`; `GET`/`PUT /properties/:id/availability` |
@@ -69,11 +70,11 @@ For R2, provision a distinct **private** bucket (`R2_PRIVATE_BUCKET_NAME`) with 
 
 ### Deliberately not implemented
 
-No payments, no OAuth/social sign-in, no phone verification, no realtime sockets, and no automated listing fraud detection. Email is transactional only. Do not describe any of these as available.
+No payments, no OAuth/social sign-in, no phone verification, no realtime sockets, and no automated listing fraud detection. Listing reports are reviewed manually. Email supports account/activity notices and opt-in saved-search alerts; there are no marketing campaigns.
 
 ## Scheduled maintenance
 
-`@nestjs/schedule` jobs prune expired refresh sessions, email tokens and login attempts (hourly), remind listers about expiring availability and pause stale listings (hourly), delete orphaned uploads (6-hourly), prune audit logs (daily) and clear expired account locks (half-hourly). All are idempotent. Every replica would run them, so set `ENABLE_JOBS=false` on all but one.
+`@nestjs/schedule` jobs prune expired refresh sessions, email tokens and login attempts (hourly), send opted-in saved-search matches (hourly), remind listers about expiring availability and pause stale listings (hourly), delete orphaned uploads (6-hourly), prune audit logs (daily) and clear expired account locks (half-hourly). All are idempotent. Every replica would run them, so set `ENABLE_JOBS=false` on all but one.
 
 ## Rate limiting across replicas
 

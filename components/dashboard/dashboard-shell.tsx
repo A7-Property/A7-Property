@@ -15,6 +15,7 @@ import {
   Search,
   Settings,
   ShieldCheck,
+  Flag,
   UserRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -59,6 +60,7 @@ const userNav: DashboardNavItem[] = [
 const adminNav: DashboardNavItem[] = [
   { label: "Overview", labelMy: "အနှစ်ချုပ်", href: "/admin", icon: LayoutDashboard },
   { label: "Verification", labelMy: "စိစစ်ရန်", href: "/admin?section=properties", icon: Building2 },
+  { label: "Reports", labelMy: "တိုင်ကြားချက်များ", href: "/admin?section=reports", icon: Flag },
   { label: "Users", labelMy: "သုံးစွဲသူများ", href: "/admin?section=users", icon: UserRound },
   { label: "Audit Logs", labelMy: "မှတ်တမ်းများ", href: "/admin?section=audit", icon: ShieldCheck },
 ];

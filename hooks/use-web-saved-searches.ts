@@ -53,5 +53,11 @@ export function useWebSavedSearches() {
     if (syncedToAccount) { void savedSearchesApi.deleteSavedSearch(id).then(() => setSearches((current) => current.filter((item) => item.id !== id))); return; }
     writeStoredJson(STORAGE_KEYS.savedSearches, read().filter((item) => item.id !== id));
   }, [syncedToAccount]);
-  return { searches, ready, save, remove, serverBacked: syncedToAccount };
+  const setNotifications = useCallback(async (id: string, enabled: boolean) => {
+    if (!syncedToAccount) return false;
+    const updated = await savedSearchesApi.updateSavedSearch(id, { notificationsEnabled: enabled });
+    setSearches((current) => current.map((item) => item.id === id ? { ...item, notificationsEnabled: updated.notificationsEnabled } : item));
+    return true;
+  }, [syncedToAccount]);
+  return { searches, ready, save, remove, setNotifications, serverBacked: syncedToAccount };
 }

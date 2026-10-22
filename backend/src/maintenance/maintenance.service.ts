@@ -4,7 +4,8 @@ import { PrismaService } from "../prisma/prisma.service";
 import { UploadsService } from "../uploads/uploads.service";
 import { MailService } from "../mail/mail.service";
 import { AuditService } from "../audit/audit.service";
-import { AuditAction, PropertyStatus, UserRole } from "../generated/prisma/enums";
+import { Prisma } from "../generated/prisma/client";
+import { AuditAction, FurnitureStatus, ListingType, PropertyStatus, PropertyType, UserRole, VerificationStatus } from "../generated/prisma/enums";
 
 /**
  * Housekeeping that production needs and nothing else does: expired auth
@@ -121,6 +122,57 @@ export class MaintenanceService {
       }
     } catch (error) {
       this.logger.error("Listing freshness sweep failed", error instanceof Error ? error.stack : undefined);
+    }
+  }
+
+  /** Sends one hourly digest per opted-in saved search for listings published since its last scan. */
+  @Cron(CronExpression.EVERY_HOUR, { name: "saved-search-alerts" })
+  async sendSavedSearchAlerts() {
+    const scanFinishedAt = new Date();
+    try {
+      const searches = await this.prisma.savedSearch.findMany({
+        where: { notificationsEnabled: true, user: { isActive: true, emailVerifiedAt: { not: null } } },
+        include: { user: { select: { email: true } } },
+        orderBy: { updatedAt: "asc" },
+        take: 200,
+      });
+      for (const search of searches) {
+        const claimed = await this.prisma.savedSearch.updateMany({
+          where: { id: search.id, lastMatchedAt: { equals: search.lastMatchedAt } },
+          data: { lastMatchedAt: scanFinishedAt },
+        });
+        if (!claimed.count) continue;
+        const filters = search.filters && typeof search.filters === "object" && !Array.isArray(search.filters) ? search.filters as Record<string, unknown> : {};
+        const text = (key: string) => typeof filters[key] === "string" ? String(filters[key]).trim() : "";
+        const number = (key: string) => { const value = Number(filters[key]); return Number.isFinite(value) && value >= 0 ? value : undefined; };
+        const purpose = text("purpose");
+        const propertyType = text("type").toUpperCase();
+        const furniture = text("furniture").toUpperCase();
+        const query = text("q");
+        const amenities = text("amenities").split(",").map((value) => value.trim()).filter(Boolean);
+        const where: Prisma.PropertyWhereInput = {
+          status: PropertyStatus.PUBLISHED,
+          updatedAt: { gt: search.lastMatchedAt ?? search.createdAt, lte: scanFinishedAt },
+          ...(purpose === "sale" || purpose === "rent" ? { listingType: purpose === "sale" ? ListingType.SALE : ListingType.RENT } : {}),
+          ...(Object.values(PropertyType).includes(propertyType as PropertyType) ? { propertyType: propertyType as PropertyType } : {}),
+          ...(Object.values(FurnitureStatus).includes(furniture as FurnitureStatus) ? { furniture: furniture as FurnitureStatus } : {}),
+          ...(number("min") !== undefined || number("max") !== undefined ? { price: { gte: number("min"), lte: number("max") } } : {}),
+          ...(number("beds") !== undefined ? { bedrooms: { gte: number("beds") } } : {}),
+          ...(number("baths") !== undefined ? { bathrooms: { gte: number("baths") } } : {}),
+          ...(text("verified") === "1" ? { verificationStatus: VerificationStatus.VERIFIED } : {}),
+          ...(query ? { OR: [
+            { title: { contains: query, mode: "insensitive" } },
+            { city: { contains: query, mode: "insensitive" } },
+            { township: { contains: query, mode: "insensitive" } },
+            { address: { contains: query, mode: "insensitive" } },
+          ] } : {}),
+          ...(amenities.length ? { AND: amenities.map((name) => ({ amenities: { some: { name: { equals: name, mode: "insensitive" as const } } } })) } : {}),
+        };
+        const matches = await this.prisma.property.findMany({ where, select: { id: true, title: true }, orderBy: { createdAt: "desc" }, take: 20 });
+        if (matches.length) await this.mail.notifySavedSearchMatches(search.user.email, { title: search.title, href: search.href, properties: matches });
+      }
+    } catch (error) {
+      this.logger.error("Saved-search alert sweep failed", error instanceof Error ? error.stack : undefined);
     }
   }
 }

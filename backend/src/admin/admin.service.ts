@@ -1,13 +1,13 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import type { Request } from "express";
 import { Prisma } from "../generated/prisma/client";
-import { AuditAction, PropertyStatus, UserRole, VerificationStatus } from "../generated/prisma/enums";
+import { AuditAction, PropertyReportStatus, PropertyStatus, UserRole, VerificationStatus } from "../generated/prisma/enums";
 import { PrismaService } from "../prisma/prisma.service";
 import { AuditService } from "../audit/audit.service";
 import { MailService } from "../mail/mail.service";
 import { pageMeta } from "../common/pagination";
 import { presentProperty, propertyInclude } from "../properties/properties.service";
-import { AdminPropertyQueryDto, AdminUserQueryDto, AdminUserStatusDto, AdminVerificationDocumentQueryDto, AdminVerificationDocumentDecisionDto, AuditLogQueryDto, VerificationDecisionDto } from "./dto";
+import { AdminPropertyQueryDto, AdminPropertyReportDecisionDto, AdminPropertyReportQueryDto, AdminUserQueryDto, AdminUserStatusDto, AdminVerificationDocumentQueryDto, AdminVerificationDocumentDecisionDto, AuditLogQueryDto, VerificationDecisionDto } from "./dto";
 
 const adminUserSelect = {
   id: true, email: true, firstName: true, lastName: true, address: true, phone: true, role: true,
@@ -29,7 +29,7 @@ export class AdminService {
   ) {}
 
   async overview() {
-    const [users, listers, seekers, activeUsers, properties, published, pendingReview, verified, inquiries, viewings, newInquiries, requestedViewings] =
+    const [users, listers, seekers, activeUsers, properties, published, pendingReview, verified, inquiries, viewings, newInquiries, requestedViewings, pendingReports] =
       await this.prisma.$transaction([
         this.prisma.user.count(),
         this.prisma.user.count({ where: { role: UserRole.LISTER } }),
@@ -43,13 +43,58 @@ export class AdminService {
         this.prisma.viewing.count(),
         this.prisma.inquiry.count({ where: { status: "NEW" } }),
         this.prisma.viewing.count({ where: { status: "REQUESTED" } }),
+        this.prisma.propertyReport.count({ where: { status: PropertyReportStatus.PENDING } }),
       ]);
     return {
       users: { total: users, active: activeUsers, listers, seekers },
       properties: { total: properties, published, pendingReview, verified },
       inquiries: { total: inquiries, new: newInquiries },
       viewings: { total: viewings, requested: requestedViewings },
+      reports: { pending: pendingReports },
     };
+  }
+
+  async propertyReports(query: AdminPropertyReportQueryDto) {
+    const where = query.status ? { status: query.status } : {};
+    const [total, records] = await this.prisma.$transaction([
+      this.prisma.propertyReport.count({ where }),
+      this.prisma.propertyReport.findMany({
+        where,
+        include: {
+          property: { select: { id: true, title: true, status: true, verificationStatus: true } },
+          reporter: { select: { id: true, email: true, firstName: true, lastName: true } },
+        },
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+        skip: (query.page - 1) * query.limit,
+        take: query.limit,
+      }),
+    ]);
+    return { data: records, meta: pageMeta(query.page, query.limit, total) };
+  }
+
+  async decidePropertyReport(adminId: string, id: string, input: AdminPropertyReportDecisionDto, request?: Request) {
+    if (input.status === PropertyReportStatus.PENDING) throw new BadRequestException("A reviewed report must be resolved or dismissed");
+    const report = await this.prisma.propertyReport.findUnique({ where: { id }, select: { id: true, status: true, propertyId: true } });
+    if (!report) throw new NotFoundException("Property report not found");
+    if (report.status !== PropertyReportStatus.PENDING) throw new BadRequestException("Property report has already been reviewed");
+    const updated = await this.prisma.propertyReport.update({
+      where: { id },
+      data: { status: input.status, resolutionNote: input.resolutionNote?.trim() || null, reviewedById: adminId, reviewedAt: new Date() },
+      include: {
+        property: { select: { id: true, title: true, status: true, verificationStatus: true } },
+        reporter: { select: { id: true, email: true, firstName: true, lastName: true } },
+      },
+    });
+    await this.audit.record({
+      action: AuditAction.PROPERTY_REPORT_REVIEWED,
+      actorId: adminId,
+      actorRole: UserRole.ADMIN,
+      targetType: "PropertyReport",
+      targetId: id,
+      metadata: { propertyId: report.propertyId, from: report.status, to: input.status, note: input.resolutionNote ?? null },
+      request,
+    });
+    return updated;
   }
 
   /** Unlike the public list, this sees every status so reviewers can work the queue. */

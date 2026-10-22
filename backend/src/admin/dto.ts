@@ -1,6 +1,6 @@
 import { Type } from "class-transformer";
 import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Max, MaxLength, Min } from "class-validator";
-import { AuditAction, PropertyStatus, UserRole, VerificationStatus } from "../generated/prisma/enums";
+import { AuditAction, PropertyReportStatus, PropertyStatus, UserRole, VerificationStatus } from "../generated/prisma/enums";
 
 export class AdminPropertyQueryDto {
   @IsOptional() @IsEnum(PropertyStatus) status?: PropertyStatus;
@@ -48,4 +48,15 @@ export class AdminVerificationDocumentQueryDto {
 export class AdminVerificationDocumentDecisionDto {
   @IsEnum(VerificationStatus) status!: VerificationStatus;
   @IsOptional() @IsString() @MaxLength(1000) rejectionNote?: string;
+}
+
+export class AdminPropertyReportQueryDto {
+  @IsOptional() @IsEnum(PropertyReportStatus) status?: PropertyReportStatus;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
+}
+
+export class AdminPropertyReportDecisionDto {
+  @IsEnum(PropertyReportStatus) status!: PropertyReportStatus;
+  @IsOptional() @IsString() @MaxLength(1000) resolutionNote?: string;
 }

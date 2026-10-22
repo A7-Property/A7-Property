@@ -102,6 +102,22 @@ enum AuditAction {
   USER_EMAIL_CHANGED
   PROPERTY_AVAILABILITY_CONFIRMED
   PROPERTY_EXPIRED
+  PROPERTY_REPORT_CREATED
+  PROPERTY_REPORT_REVIEWED
+}
+
+enum PropertyReportReason {
+  SUSPECTED_SCAM
+  INCORRECT_INFORMATION
+  DUPLICATE_LISTING
+  UNAVAILABLE_PROPERTY
+  OTHER
+}
+
+enum PropertyReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
 }
 
 model User {
@@ -141,6 +157,7 @@ model User {
   deactivatedAt       DateTime?
   auditLogs           AuditLog[]
   verificationDocs    VerificationDocument[]
+  propertyReports     PropertyReport[]
 
   @@index([role, isActive])
 }
@@ -264,6 +281,7 @@ model Property {
   viewings           Viewing[]
   availabilitySlots AvailabilitySlot[]
   documents          PropertyDocument[]
+  reports            PropertyReport[]
 
   @@index([status, listingType, createdAt])
   @@index([city, township, propertyType])
@@ -326,6 +344,26 @@ model SavedSearch {
   @@unique([userId, href])
   @@index([userId, createdAt])
   @@index([notificationsEnabled, lastMatchedAt])
+}
+
+model PropertyReport {
+  id             String               @id @default(cuid())
+  propertyId     String
+  reporterId     String
+  reason         PropertyReportReason
+  details        String               @default("")
+  status         PropertyReportStatus @default(PENDING)
+  resolutionNote String?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  property       Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  reporter       User                 @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([propertyId, status])
+  @@index([reporterId, createdAt])
 }
 
 model Inquiry {

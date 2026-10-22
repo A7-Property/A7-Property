@@ -43,14 +43,19 @@ export class SavedSearchesController {
     }
     return this.prisma.savedSearch.upsert({
       where: { userId_href: { userId: user.id, href: body.href } },
-      create: { userId: user.id, title: body.title.trim(), detail: body.detail.trim(), href: body.href, filters: body.filters as Prisma.InputJsonValue, notificationsEnabled: body.notificationsEnabled },
-      update: { title: body.title.trim(), detail: body.detail.trim(), filters: body.filters as Prisma.InputJsonValue, notificationsEnabled: body.notificationsEnabled },
+      create: { userId: user.id, title: body.title.trim(), detail: body.detail.trim(), href: body.href, filters: body.filters as Prisma.InputJsonValue, notificationsEnabled: body.notificationsEnabled, lastMatchedAt: body.notificationsEnabled ? new Date() : null },
+      update: { title: body.title.trim(), detail: body.detail.trim(), filters: body.filters as Prisma.InputJsonValue, notificationsEnabled: body.notificationsEnabled, ...(body.notificationsEnabled && !existing?.notificationsEnabled ? { lastMatchedAt: new Date() } : {}) },
     });
   }
 
   @Patch(":id")
   async update(@CurrentUser() user: AuthIdentity, @Param("id") id: string, @Body() body: UpdateSavedSearchDto) {
-    const changed = await this.prisma.savedSearch.updateMany({ where: { id, userId: user.id }, data: body });
+    const existing = await this.prisma.savedSearch.findFirst({ where: { id, userId: user.id }, select: { notificationsEnabled: true } });
+    if (!existing) throw new BadRequestException("Saved search not found");
+    const changed = await this.prisma.savedSearch.updateMany({
+      where: { id, userId: user.id },
+      data: { ...body, ...(body.notificationsEnabled && !existing.notificationsEnabled ? { lastMatchedAt: new Date() } : {}) },
+    });
     if (changed.count !== 1) throw new BadRequestException("Saved search not found");
     return this.prisma.savedSearch.findUniqueOrThrow({ where: { id } });
   }

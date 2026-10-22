@@ -4,7 +4,7 @@ import type { Request } from "express";
 import { AuthIdentity, CurrentUser, Roles, VerifiedEmail } from "../common/auth";
 import { UserRole } from "../generated/prisma/enums";
 import { AdminService } from "./admin.service";
-import { AdminPropertyQueryDto, AdminUserQueryDto, AdminUserStatusDto, AdminVerificationDocumentQueryDto, AdminVerificationDocumentDecisionDto, AuditLogQueryDto, VerificationDecisionDto } from "./dto";
+import { AdminPropertyQueryDto, AdminPropertyReportDecisionDto, AdminPropertyReportQueryDto, AdminUserQueryDto, AdminUserStatusDto, AdminVerificationDocumentQueryDto, AdminVerificationDocumentDecisionDto, AuditLogQueryDto, VerificationDecisionDto } from "./dto";
 
 /**
  * Moderation surface. `ADMIN` cannot be self-assigned at registration, so these
@@ -63,5 +63,15 @@ export class AdminController {
   @Patch("verification-documents/:id/status")
   setVerificationDocumentStatus(@CurrentUser() user: AuthIdentity, @Param("id") id: string, @Body() body: AdminVerificationDocumentDecisionDto, @Req() request: Request) {
     return this.admin.setVerificationDocumentStatus(user.id, id, body, request);
+  }
+
+  @Get("property-reports")
+  propertyReports(@Query() query: AdminPropertyReportQueryDto) {
+    return this.admin.propertyReports(query);
+  }
+
+  @Patch("property-reports/:id")
+  decidePropertyReport(@CurrentUser() user: AuthIdentity, @Param("id") id: string, @Body() body: AdminPropertyReportDecisionDto, @Req() request: Request) {
+    return this.admin.decidePropertyReport(user.id, id, body, request);
   }
 }

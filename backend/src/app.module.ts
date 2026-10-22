@@ -24,6 +24,7 @@ import { AdminModule } from "./admin/admin.module";
 import { MailModule } from "./mail/mail.module";
 import { HealthModule } from "./health/health.module";
 import { MaintenanceModule } from "./maintenance/maintenance.module";
+import { ReportsModule } from "./reports/reports.module";
 
 /**
  * Rate-limit counters live in Redis when REDIS_URL is set. Without it the
@@ -60,6 +61,7 @@ function throttlerModule(): DynamicModule {
     MailModule,
     HealthModule,
     MaintenanceModule,
+    ReportsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

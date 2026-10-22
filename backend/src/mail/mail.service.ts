@@ -102,6 +102,15 @@ export class MailService {
     );
   }
 
+  async notifySavedSearchMatches(email: string, input: { title: string; href: string; properties: Array<{ id: string; title: string }> }) {
+    const lines = input.properties.slice(0, 5).map((property) => `- ${property.title}: ${this.appUrl(`/properties/${property.id}`)}`);
+    return this.notify(
+      email,
+      `${input.properties.length} new ${input.properties.length === 1 ? "home" : "homes"} for ${input.title}`,
+      `New or updated listings match your saved search "${input.title}":\n\n${lines.join("\n")}\n\nRun the full search: ${this.appUrl(input.href)}\n\nManage alerts: ${this.appUrl("/saved-searches")}`,
+    );
+  }
+
   private appUrl(path: string) {
     const frontend = (process.env.FRONTEND_URL ?? "http://localhost:3000").split(",")[0].trim();
     return new URL(path, frontend).toString();
