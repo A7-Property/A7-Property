@@ -4,7 +4,7 @@ import { Throttle } from "@nestjs/throttler";
 import type { CookieOptions, Request, Response } from "express";
 import { AuthIdentity, CurrentUser, Public } from "../common/auth";
 import { AuthService } from "./auth.service";
-import { ChangePasswordDto, EmailDto, LoginDto, PasswordConfirmationDto, RegisterDto, ResetPasswordDto, TokenDto } from "./dto";
+import { ChangePasswordDto, EmailDto, LoginDto, PasswordConfirmationDto, RegisterDto, RequestEmailChangeDto, ResetPasswordDto, TokenDto } from "./dto";
 
 const refreshCookie = "a7_refresh";
 
@@ -99,6 +99,28 @@ export class AuthController {
     const result = await this.auth.changePassword(user.id, body.currentPassword, body.newPassword, request);
     response.clearCookie(refreshCookie, cookieOptions());
     return result;
+  }
+
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post("change-email/request")
+  requestEmailChange(@CurrentUser() user: AuthIdentity, @Body() body: RequestEmailChangeDto, @Req() request: Request) {
+    return this.auth.requestEmailChange(user.id, body.newEmail, body.password, request);
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(200)
+  @Post("change-email/confirm")
+  confirmEmailChange(@Body() body: TokenDto, @Req() request: Request) {
+    return this.auth.confirmEmailChange(body.token, request);
+  }
+
+  @ApiBearerAuth()
+  @Delete("change-email")
+  cancelEmailChange(@CurrentUser() user: AuthIdentity) {
+    return this.auth.cancelEmailChange(user.id);
   }
 
   @ApiBearerAuth()

@@ -35,10 +35,27 @@ export class MailService {
     return this.send(email, "Reset your A7 Property password", `Open this link to reset your password. It expires in 30 minutes:\n${url}`);
   }
 
+  async sendEmailChangeVerification(email: string, token: string) {
+    const url = this.link("confirm-email-change", token);
+    return this.send(email, "Confirm your new A7 Property email", `Open this link to confirm this address. It expires in 30 minutes:\n${url}`);
+  }
+
   // --- Security notices and activity notifications: best effort, never block a request. ---
 
   async notifyPasswordChanged(email: string) {
     return this.notify(email, "Your A7 Property password changed", `Your password was just changed and all other sessions were signed out.\n\nIf this was not you, reset your password immediately at ${this.appUrl("/forgot-password")}.`);
+  }
+
+  async notifyEmailChanged(email: string, newEmail: string) {
+    return this.notify(email, "Your A7 Property email changed", `Your account email was changed to ${newEmail} and every signed-in device was signed out.\n\nIf this was not you, reset your password immediately at ${this.appUrl("/forgot-password")}.`);
+  }
+
+  async notifyListingFreshness(email: string, input: { propertyTitle: string; expiresAt: Date }) {
+    return this.notify(email, `Confirm availability: ${input.propertyTitle}`, `Your listing "${input.propertyTitle}" will pause on ${input.expiresAt.toISOString()} unless you confirm it is still available.\n\nOpen your listings: ${this.appUrl("/owner")}`);
+  }
+
+  async notifyListingExpired(email: string, propertyTitle: string) {
+    return this.notify(email, `Listing paused: ${propertyTitle}`, `Your listing "${propertyTitle}" was paused because its availability was not reconfirmed. Confirm availability and publish it again from ${this.appUrl("/owner")}.`);
   }
 
   async notifyAccountLocked(email: string, minutes: number) {

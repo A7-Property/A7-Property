@@ -56,6 +56,12 @@ export const verifyEmail = (token: string) => apiRequest<{ success: boolean }>("
 export const resendVerification = (email: string) => apiRequest<{ success: boolean }>("/auth/resend-verification", { method: "POST", body: { email }, auth: false });
 export const forgotPassword = (email: string) => apiRequest<{ success: boolean }>("/auth/forgot-password", { method: "POST", body: { email }, auth: false });
 export const resetPassword = (token: string, password: string) => apiRequest<{ success: boolean }>("/auth/reset-password", { method: "POST", body: { token, password }, auth: false });
+export const requestEmailChange = (newEmail: string, password: string) => apiRequest<{ success: boolean }>("/auth/change-email/request", { method: "POST", body: { newEmail, password } });
+export const confirmEmailChange = async (token: string) => {
+  try { return await apiRequest<{ success: boolean }>("/auth/change-email/confirm", { method: "POST", body: { token }, auth: false }); }
+  finally { setAccessToken(null); }
+};
+export const cancelEmailChange = () => apiRequest<{ success: boolean }>("/auth/change-email", { method: "DELETE" });
 
 /** Changing a password signs every device out, including this one. */
 export async function changePassword(currentPassword: string, newPassword: string) {

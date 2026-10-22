@@ -10,10 +10,7 @@ interface SavedSearchRecord {
   createdAt: string;
 }
 
-const defaultSavedSearches: SavedSearchRecord[] = [
-  { id: "hledan", title: "Hledan · 2 bedroom condos", detail: "Up to 800,000 MMK · Furnished", count: 8, href: "/search?purpose=rent&location=Hledan&max=800000&beds=2&type=condo", notificationsEnabled: true, createdAt: "2026-01-01T00:00:00.000Z" },
-  { id: "yankin", title: "Quiet homes in Yankin", detail: "1+ bedroom · Verified only", count: 5, href: "/search?purpose=rent&location=Yankin&beds=1&verified=1", notificationsEnabled: false, createdAt: "2026-01-02T00:00:00.000Z" },
-];
+const defaultSavedSearches: SavedSearchRecord[] = [];
 
 function readSavedSearches() {
   return readStoredJson<SavedSearchRecord[]>(STORAGE_KEYS.savedSearches, defaultSavedSearches);

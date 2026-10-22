@@ -222,6 +222,54 @@ export class AuthService {
     return { success: true };
   }
 
+  async requestEmailChange(userId: string, requestedEmail: string, password: string, request?: Request) {
+    const newEmail = requestedEmail.trim().toLowerCase();
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { email: true, passwordHash: true, role: true } });
+    if (!(await argon2.verify(user.passwordHash, password).catch(() => false))) throw new UnauthorizedException("Password is incorrect");
+    if (newEmail === user.email) throw new BadRequestException("Choose a different email address");
+    if (await this.prisma.user.findUnique({ where: { email: newEmail }, select: { id: true } })) throw new ConflictException("Email already registered");
+
+    const raw = randomBytes(32).toString("base64url");
+    await this.prisma.$transaction([
+      this.prisma.emailToken.updateMany({ where: { userId, type: EmailTokenType.CHANGE_EMAIL, consumedAt: null }, data: { consumedAt: new Date() } }),
+      this.prisma.emailToken.create({ data: { userId, type: EmailTokenType.CHANGE_EMAIL, tokenHash: tokenHash(raw), pendingEmail: newEmail, expiresAt: new Date(Date.now() + 30 * 60_000) } }),
+    ]);
+    try {
+      await this.mail.sendEmailChangeVerification(newEmail, raw);
+    } catch (error) {
+      await this.prisma.emailToken.updateMany({ where: { tokenHash: tokenHash(raw), consumedAt: null }, data: { consumedAt: new Date() } });
+      throw error;
+    }
+    await this.audit.record({ action: AuditAction.USER_EMAIL_CHANGE_REQUESTED, actorId: userId, actorRole: user.role, targetType: "User", targetId: userId, metadata: { newEmail }, request });
+    return { success: true };
+  }
+
+  async confirmEmailChange(token: string, request?: Request) {
+    const row = await this.validEmailToken(token, EmailTokenType.CHANGE_EMAIL);
+    if (!row.pendingEmail) throw new BadRequestException("Invalid or expired token");
+    const oldUser = await this.prisma.user.findUniqueOrThrow({ where: { id: row.userId }, select: { email: true, role: true } });
+    if (await this.prisma.user.findUnique({ where: { email: row.pendingEmail }, select: { id: true } })) throw new ConflictException("Email already registered");
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        const claimed = await tx.emailToken.updateMany({ where: { id: row.id, consumedAt: null, expiresAt: { gt: new Date() } }, data: { consumedAt: new Date() } });
+        if (claimed.count !== 1) throw new BadRequestException("Invalid or expired token");
+        await tx.user.update({ where: { id: row.userId }, data: { email: row.pendingEmail!, emailVerifiedAt: new Date(), tokenVersion: { increment: 1 } } });
+        await tx.refreshSession.updateMany({ where: { userId: row.userId, revokedAt: null }, data: { revokedAt: new Date() } });
+      });
+    } catch (error) {
+      if (typeof error === "object" && error && "code" in error && error.code === "P2002") throw new ConflictException("Email already registered");
+      throw error;
+    }
+    await this.audit.record({ action: AuditAction.USER_EMAIL_CHANGED, actorId: row.userId, actorRole: oldUser.role, targetType: "User", targetId: row.userId, metadata: { oldEmail: oldUser.email, newEmail: row.pendingEmail }, request });
+    await this.mail.notifyEmailChanged(oldUser.email, row.pendingEmail);
+    return { success: true };
+  }
+
+  async cancelEmailChange(userId: string) {
+    await this.prisma.emailToken.updateMany({ where: { userId, type: EmailTokenType.CHANGE_EMAIL, consumedAt: null }, data: { consumedAt: new Date() } });
+    return { success: true };
+  }
+
   async deactivate(userId: string, password: string, request?: Request) {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { passwordHash: true, role: true } });
     if (!(await argon2.verify(user.passwordHash, password).catch(() => false))) throw new UnauthorizedException("Password is incorrect");

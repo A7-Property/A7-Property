@@ -4,7 +4,7 @@ NestJS 11, PostgreSQL 16, Prisma 7 and JWT API for the A7 Property marketplace.
 
 **Status:** the service is feature-complete and production-hardened in code, with migrations, moderation, scheduled maintenance, an audit trail, unit tests and integration tests that run against a real PostgreSQL instance. It is **not yet deployed**: no production database, R2 bucket, SMTP provider or API host has been provisioned.
 
-With `NEXT_PUBLIC_API_URL` set, the Next.js UI runs against this API for every journey — accounts, discovery, search, property detail, saved homes, inquiries, viewings, messages, the seeker dashboard and the owner/agent CRM. Without it the UI stays on its device-local demo data. A few things remain device-local in both modes because no endpoint exists for them: recently viewed, saved searches, the comparison selection, profile preferences, and the CRM's listing-views/conversion analytics (which are labelled as illustrative).
+With `NEXT_PUBLIC_API_URL` set, the Next.js UI runs against this API for every journey — accounts, discovery, search, property detail, saved homes and searches, inquiries, viewings, messages, the seeker dashboard and the owner/agent CRM. Without it the UI stays on its device-local demo data. Saved searches sync for signed-in seekers and remain browser-local for guests/device mode. Recently viewed, comparison selection and profile preferences remain device-local because no endpoint exists for them.
 
 A lister can create and publish real listings from the CRM: the editor collects every field the backend requires, uploads photos through `POST /uploads/property-image`, and surfaces publish, pause and archive controls. A lister can also open a thread with any seeker who requested a viewing (`POST /conversations/from-viewing`).
 
@@ -34,12 +34,12 @@ All routes are under `/api/v1`. Every response body is `{ "data": ... }`; pagina
 
 | Area | Endpoints |
 | --- | --- |
-| Auth | `POST register`, `login`, `refresh`, `logout`, `logout-all`, `change-password`, `deactivate`, `verify-email`, `resend-verification`, `forgot-password`, `reset-password`; `GET me`, `sessions`; `DELETE sessions/:id` |
-| Properties | `GET /properties` (filters below), `GET /properties/:id`, `GET /properties/:id/similar`, `GET /properties/mine`, `GET /properties/mine/overview`, `POST /properties`, `PATCH /properties/:id`, `DELETE /properties/:id`, `POST /properties/:id/publish`, `POST /properties/:id/pause` |
-| Saved | `GET /saved-properties`, `GET /saved-properties/ids`, `POST`/`DELETE /saved-properties/:propertyId` |
+| Auth | `POST register`, `login`, `refresh`, `logout`, `logout-all`, `change-password`, `deactivate`, `verify-email`, `resend-verification`, `forgot-password`, `reset-password`, `change-email/request`, `change-email/confirm`; `GET me`, `sessions`; `DELETE sessions/:id`, `change-email` |
+| Properties | `GET /properties` (filters below), `GET /properties/:id`, `GET /properties/:id/similar`, `GET /properties/mine`, `GET /properties/mine/overview`, `POST /properties`, `PATCH /properties/:id`, `DELETE /properties/:id`, `POST /properties/:id/publish`, `POST /properties/:id/pause`, `POST /properties/:id/confirm-availability`, `PATCH /properties/:id/availability-status` |
+| Saved | `GET /saved-properties`, `GET /saved-properties/ids`, `POST`/`DELETE /saved-properties/:propertyId`; `GET`/`POST /saved-searches`, `PATCH`/`DELETE /saved-searches/:id` |
 | Inquiries | `POST /inquiries`, `GET /inquiries`, `GET /inquiries/unread-count`, `GET /inquiries/:id`, `PATCH /inquiries/:id/status` |
 | Messages | `GET /conversations`, `GET /conversations/unread-count`, `POST /conversations` (seeker), `POST /conversations/from-viewing` (lister), `GET /conversations/:id`, `GET`/`POST /conversations/:id/messages`, `PATCH /conversations/:id/read`, `PATCH /messages/:id/read` |
-| Viewings | `POST /viewings`, `GET /viewings`, `GET /viewings/:id`, `PATCH /viewings/:id/status` |
+| Viewings | `POST /viewings`, `GET /viewings`, `GET /viewings/:id`, `PATCH /viewings/:id/status`, `PATCH /viewings/:id/reschedule`; `GET`/`PUT /properties/:id/availability` |
 | Uploads | `POST /uploads/property-image`, `POST /uploads/property-document`, `POST /uploads/identification`, `GET /uploads/document?url=...`, `POST /users/me/avatar` |
 | Users | `GET`/`PATCH /users/me` |
 | Admin | `GET /admin/overview`, `GET /admin/properties`, `PATCH /admin/properties/:id/verification`, `GET /admin/users`, `PATCH /admin/users/:id/status`, `POST /admin/users/:id/unlock`, `GET /admin/audit-logs` |
@@ -73,7 +73,7 @@ No payments, no OAuth/social sign-in, no phone verification, no realtime sockets
 
 ## Scheduled maintenance
 
-`@nestjs/schedule` jobs prune expired refresh sessions, email tokens and login attempts (hourly), delete orphaned uploads (6-hourly), prune audit logs (daily) and clear expired account locks (half-hourly). All are idempotent. Every replica would run them, so set `ENABLE_JOBS=false` on all but one.
+`@nestjs/schedule` jobs prune expired refresh sessions, email tokens and login attempts (hourly), remind listers about expiring availability and pause stale listings (hourly), delete orphaned uploads (6-hourly), prune audit logs (daily) and clear expired account locks (half-hourly). All are idempotent. Every replica would run them, so set `ENABLE_JOBS=false` on all but one.
 
 ## Rate limiting across replicas
 

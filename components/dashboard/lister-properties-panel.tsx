@@ -19,11 +19,13 @@ interface Props {
   onEdit: (property: Property) => void;
   onTogglePublish: (property: Property) => void;
   onArchive: (property: Property) => void;
+  onConfirmAvailability: (property: Property) => void;
+  onMarkUnavailable: (property: Property) => void;
   onRetry: () => void;
   children?: ReactNode;
 }
 
-export function ListerPropertiesPanel({ properties, ready, failed, serverBacked, pendingIds, onCreate, onEdit, onTogglePublish, onArchive, onRetry, children }: Props) {
+export function ListerPropertiesPanel({ properties, ready, failed, serverBacked, pendingIds, onCreate, onEdit, onTogglePublish, onArchive, onConfirmAvailability, onMarkUnavailable, onRetry, children }: Props) {
   const { tx, isMyanmar } = useLanguage();
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<ListingStatus | "all">("all");
@@ -60,13 +62,14 @@ export function ListerPropertiesPanel({ properties, ready, failed, serverBacked,
             <span className="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#EAF4FF] text-a7-blue">{property.images[0] ? <ProgressiveImage src={property.images[0]} alt="" fill sizes="64px" className="object-cover" /> : <Building2 className="size-6" aria-hidden="true" />}</span>
             <div className="min-w-0 flex-1"><h3 className="truncate text-sm font-semibold">{property.title}</h3><p className="mt-1 truncate text-xs text-a7-muted">{property.township} · {property.purpose === "sale" ? tx("For sale", "ရောင်းရန်") : tx("For rent", "ငှားရန်")}</p><p className="mt-2 text-sm font-semibold">{formatPropertyPrice(property, isMyanmar ? "my" : "en")}</p></div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0"><Badge variant={property.listing_status === "PUBLISHED" ? "success" : property.listing_status === "DRAFT" || property.listing_status === "PAUSED" ? "warning" : "neutral"}>{statusLabels[property.listing_status]}</Badge><p className="mt-1 text-xs text-a7-muted">{tx(listingVerificationLabel(property), ({ verified: "စိစစ်ပြီးသောအိမ်စာရင်း", pending: "စိစစ်မှု စောင့်ဆိုင်းနေသည်", rejected: "စိစစ်မှု ငြင်းပယ်ထားသည်", unverified: "မစိစစ်ရသေးသောအိမ်စာရင်း" })[property.verification_status])}</p></div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><div className="min-w-0"><Badge variant={property.listing_status === "PUBLISHED" ? "success" : property.listing_status === "DRAFT" || property.listing_status === "PAUSED" ? "warning" : "neutral"}>{statusLabels[property.listing_status]}</Badge><p className="mt-1 text-xs text-a7-muted">{tx(listingVerificationLabel(property), ({ verified: "စိစစ်ပြီးသောအိမ်စာရင်း", pending: "စိစစ်မှု စောင့်ဆိုင်းနေသည်", rejected: "စိစစ်မှု ငြင်းပယ်ထားသည်", unverified: "မစိစစ်ရသေးသောအိမ်စာရင်း" })[property.verification_status])}</p>{property.expires_at && <p className="mt-1 text-[11px] text-a7-muted">{tx(`Availability expires ${new Date(property.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`, `ရရှိနိုင်မှု သက်တမ်း ${new Date(property.expires_at).toLocaleDateString("my-MM")}`)}</p>}</div>
             <div className="flex shrink-0 items-center gap-1">{pending && <Loader2 className="mr-1 size-4 animate-spin text-a7-blue" aria-label={tx("Updating listing", "အိမ်စာရင်း ပြင်နေသည်")} />}
               {canManage && <Button size="icon" variant="ghost" disabled={pending} onClick={() => onTogglePublish(property)} aria-label={property.listing_status === "PUBLISHED" ? tx(`Pause ${property.title}`, `${property.title} ကို ရပ်ရန်`) : tx(`Publish ${property.title}`, `${property.title} ကို ကြော်ငြာထုတ်ရန်`)}>{property.listing_status === "PUBLISHED" ? <PauseCircle className="size-4" /> : <PlayCircle className="size-4" />}</Button>}
               <Button size="icon" variant="ghost" disabled={pending || property.listing_status === "ARCHIVED"} onClick={() => onEdit(property)} aria-label={tx(`Edit ${property.title}`, `${property.title} ကို ပြင်ရန်`)}><Pencil className="size-4" /></Button>
               {canManage && <Button size="icon" variant="ghost" disabled={pending} onClick={() => onArchive(property)} aria-label={tx(`Archive ${property.title}`, `${property.title} ကို သိမ်းဆည်းရန်`)}><Archive className="size-4" /></Button>}
             </div>
           </div>
+          {serverBacked && (property.listing_status === "PUBLISHED" || property.listing_status === "PAUSED") && <div className="mt-3 flex flex-wrap gap-2"><Button variant="outline" disabled={pending} onClick={() => onConfirmAvailability(property)}>{tx("Still available", "ရရှိနိုင်သေးသည်")}</Button><Button variant="outline" disabled={pending} onClick={() => onMarkUnavailable(property)}>{property.purpose === "sale" ? tx("Mark sold", "ရောင်းပြီး") : tx("Mark rented", "ငှားပြီး")}</Button></div>}
         </li>;
       })}</ul>}
     {ready && !failed && result.total > 0 && <nav aria-label={tx("Property pages", "အိမ်စာရင်း စာမျက်နှာများ")} className="flex flex-wrap items-center justify-between gap-3 border-t border-a7-line p-4"><p className="text-xs text-a7-muted" aria-live="polite">{tx(`${result.first}–${result.last} of ${result.total}`, `${result.total} ခုအနက် ${result.first}–${result.last} ခု`)}</p><div className="flex items-center gap-2"><Button size="icon" variant="outline" disabled={result.page <= 1} onClick={() => setPage(result.page - 1)} aria-label={tx("Previous property page", "ရှေ့စာမျက်နှာ")}><ChevronLeft className="size-4" /></Button><span className="text-xs tabular-nums">{result.page} / {result.pages}</span><Button size="icon" variant="outline" disabled={result.page >= result.pages} onClick={() => setPage(result.page + 1)} aria-label={tx("Next property page", "နောက်စာမျက်နှာ")}><ChevronRight className="size-4" /></Button></div></nav>}

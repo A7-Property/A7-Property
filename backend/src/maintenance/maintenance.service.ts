@@ -2,6 +2,9 @@ import { Injectable, Logger } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { PrismaService } from "../prisma/prisma.service";
 import { UploadsService } from "../uploads/uploads.service";
+import { MailService } from "../mail/mail.service";
+import { AuditService } from "../audit/audit.service";
+import { AuditAction, PropertyStatus, UserRole } from "../generated/prisma/enums";
 
 /**
  * Housekeeping that production needs and nothing else does: expired auth
@@ -14,7 +17,12 @@ import { UploadsService } from "../uploads/uploads.service";
 export class MaintenanceService {
   private readonly logger = new Logger(MaintenanceService.name);
 
-  constructor(private readonly prisma: PrismaService, private readonly uploads: UploadsService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploads: UploadsService,
+    private readonly mail: MailService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Cron(CronExpression.EVERY_HOUR, { name: "prune-auth-records" })
   async pruneAuthRecords() {
@@ -81,6 +89,38 @@ export class MaintenanceService {
       await this.prisma.user.updateMany({ where: { lockedUntil: { lt: new Date() } }, data: { lockedUntil: null, failedLoginCount: 0 } });
     } catch (error) {
       this.logger.error("Lock expiry sweep failed", error instanceof Error ? error.stack : undefined);
+    }
+  }
+
+  /** Reminds owners once, then pauses listings whose 30-day confirmation expired. */
+  @Cron(CronExpression.EVERY_HOUR, { name: "refresh-listing-freshness" })
+  async refreshListingFreshness() {
+    const now = new Date();
+    const reminderCutoff = new Date(now.getTime() + 3 * 86_400_000);
+    try {
+      const reminders = await this.prisma.property.findMany({
+        where: { status: PropertyStatus.PUBLISHED, expiresAt: { gt: now, lte: reminderCutoff }, freshnessReminderSentAt: null },
+        select: { id: true, title: true, expiresAt: true, owner: { select: { email: true } } },
+        take: 200,
+      });
+      for (const property of reminders) {
+        const claimed = await this.prisma.property.updateMany({ where: { id: property.id, freshnessReminderSentAt: null }, data: { freshnessReminderSentAt: now } });
+        if (claimed.count && property.expiresAt) await this.mail.notifyListingFreshness(property.owner.email, { propertyTitle: property.title, expiresAt: property.expiresAt });
+      }
+
+      const expired = await this.prisma.property.findMany({
+        where: { status: PropertyStatus.PUBLISHED, expiresAt: { lte: now } },
+        select: { id: true, ownerId: true, title: true, owner: { select: { email: true } } },
+        take: 200,
+      });
+      for (const property of expired) {
+        const changed = await this.prisma.property.updateMany({ where: { id: property.id, status: PropertyStatus.PUBLISHED, expiresAt: { lte: now } }, data: { status: PropertyStatus.PAUSED } });
+        if (!changed.count) continue;
+        await this.audit.record({ action: AuditAction.PROPERTY_EXPIRED, actorId: property.ownerId, actorRole: UserRole.LISTER, targetType: "Property", targetId: property.id, metadata: { reason: "availability_confirmation_expired" } });
+        await this.mail.notifyListingExpired(property.owner.email, property.title);
+      }
+    } catch (error) {
+      this.logger.error("Listing freshness sweep failed", error instanceof Error ? error.stack : undefined);
     }
   }
 }

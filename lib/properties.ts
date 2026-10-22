@@ -64,6 +64,8 @@ export interface Property {
   lat: number | null;
   lng: number | null;
   posted_at: string;
+  availability_confirmed_at?: string | null;
+  expires_at?: string | null;
   documents?: { id?: string; url: string; type: string; status?: string }[];
   image_asset_ids?: string[];
 }

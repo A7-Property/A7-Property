@@ -72,6 +72,7 @@ enum ViewingStatus {
 enum EmailTokenType {
   VERIFY_EMAIL
   RESET_PASSWORD
+  CHANGE_EMAIL
 }
 
 enum UploadKind {
@@ -97,6 +98,10 @@ enum AuditAction {
   PROPERTY_UPDATED
   PROPERTY_STATUS_CHANGED
   PROPERTY_VERIFICATION_CHANGED
+  USER_EMAIL_CHANGE_REQUESTED
+  USER_EMAIL_CHANGED
+  PROPERTY_AVAILABILITY_CONFIRMED
+  PROPERTY_EXPIRED
 }
 
 model User {
@@ -118,6 +123,7 @@ model User {
   updatedAt           DateTime               @updatedAt
   properties          Property[]
   savedProperties     SavedProperty[]
+  savedSearches       SavedSearch[]
   sentInquiries       Inquiry[]              @relation("InquirySeeker")
   receivedInquiries   Inquiry[]              @relation("InquiryLister")
   seekerConversations Conversation[]         @relation("ConversationSeeker")
@@ -177,11 +183,13 @@ model EmailToken {
   tokenHash  String         @unique
   expiresAt  DateTime
   consumedAt DateTime?
+  pendingEmail String?
   createdAt  DateTime       @default(now())
   user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type, consumedAt])
   @@index([expiresAt])
+  @@index([pendingEmail, type, consumedAt])
 }
 
 model UploadedAsset {
@@ -244,6 +252,9 @@ model Property {
   verificationStatus VerificationStatus @default(UNVERIFIED)
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  availabilityConfirmedAt DateTime?
+  expiresAt          DateTime?
+  freshnessReminderSentAt DateTime?
   owner              User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
   images             PropertyImage[]
   amenities          PropertyAmenity[]
@@ -251,12 +262,14 @@ model Property {
   inquiries          Inquiry[]
   conversations      Conversation[]
   viewings           Viewing[]
+  availabilitySlots AvailabilitySlot[]
   documents          PropertyDocument[]
 
   @@index([status, listingType, createdAt])
   @@index([city, township, propertyType])
   @@index([ownerId, status])
   @@index([price])
+  @@index([status, expiresAt])
 }
 
 model PropertyImage {
@@ -295,6 +308,24 @@ model SavedProperty {
 
   @@unique([userId, propertyId])
   @@index([propertyId])
+}
+
+model SavedSearch {
+  id                   String   @id @default(cuid())
+  userId               String
+  title                String
+  detail               String   @default("")
+  href                 String
+  filters              Json
+  notificationsEnabled Boolean  @default(false)
+  lastMatchedAt        DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, href])
+  @@index([userId, createdAt])
+  @@index([notificationsEnabled, lastMatchedAt])
 }
 
 model Inquiry {
@@ -364,6 +395,19 @@ model Viewing {
   @@index([seekerId, scheduledAt])
   @@index([listerId, scheduledAt])
   @@index([propertyId])
+}
+
+model AvailabilitySlot {
+  id         String   @id @default(cuid())
+  propertyId String
+  startsAt   DateTime
+  endsAt     DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([propertyId, startsAt])
+  @@index([propertyId, startsAt, endsAt])
 }
 
 model VerificationDocument {

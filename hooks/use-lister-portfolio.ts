@@ -34,6 +34,8 @@ export interface ListerPortfolio {
   createListing: (input: CreateListingInput) => Promise<Property | null>;
   publish: (propertyId: string) => Promise<boolean>;
   pause: (propertyId: string) => Promise<boolean>;
+  confirmAvailability: (propertyId: string) => Promise<boolean>;
+  markUnavailable: (propertyId: string, status: "SOLD" | "RENTED") => Promise<boolean>;
   /** Soft-archives the listing on the server; the CRM list refreshes afterwards. */
   archiveListing: (propertyId: string) => Promise<boolean>;
 }
@@ -286,6 +288,18 @@ export function useListerPortfolio(role: "owner" | "agent", catalog: Property[])
     }
   }, [serverBacked, refresh, reportFailure, tx]);
 
+  const confirmAvailability = useCallback(async (propertyId: string) => {
+    if (!serverBacked) return false;
+    try { applyUpdated(fromApiProperty(await propertiesApi.confirmPropertyAvailability(propertyId))); return true; }
+    catch (error) { reportFailure(error, tx("Could not confirm this listing", "ဤအိမ်စာရင်းကို အတည်မပြုနိုင်ပါ")); return false; }
+  }, [serverBacked, applyUpdated, reportFailure, tx]);
+
+  const markUnavailable = useCallback(async (propertyId: string, nextStatus: "SOLD" | "RENTED") => {
+    if (!serverBacked) return false;
+    try { applyUpdated(fromApiProperty(await propertiesApi.markPropertyUnavailable(propertyId, nextStatus))); refresh(); return true; }
+    catch (error) { reportFailure(error, tx("Could not update availability", "ရရှိနိုင်မှုကို မပြောင်းနိုင်ပါ")); return false; }
+  }, [serverBacked, applyUpdated, refresh, reportFailure, tx]);
+
   const archiveListing = useCallback(async (propertyId: string) => {
     if (!serverBacked) return true;
     try {
@@ -312,6 +326,8 @@ export function useListerPortfolio(role: "owner" | "agent", catalog: Property[])
     createListing,
     publish,
     pause,
+    confirmAvailability,
+    markUnavailable,
     archiveListing,
   };
 }

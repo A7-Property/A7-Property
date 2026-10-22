@@ -17,6 +17,10 @@ export class ViewingStatusDto {
   @IsEnum(ViewingStatus) status!: ViewingStatus;
 }
 
+export class RescheduleViewingDto {
+  @IsDateString() scheduledAt!: string;
+}
+
 const viewingInclude = {
   property: { select: { id: true, title: true, city: true, township: true, address: true, images: { where: { isPrimary: true }, select: { url: true }, take: 1 } } },
   seeker: { select: { id: true, firstName: true, lastName: true, phone: true } },
@@ -57,6 +61,16 @@ export class ViewingsController {
     if (Number.isNaN(scheduledAt.getTime())) throw new BadRequestException("Viewing date is invalid");
     if (scheduledAt <= new Date()) throw new BadRequestException("Viewing date must be in the future");
     if (scheduledAt.getTime() > Date.now() + maxDaysAhead * 86_400_000) throw new BadRequestException(`Viewing date must be within ${maxDaysAhead} days`);
+
+    const publishedSlots = await this.prisma.availabilitySlot.count({ where: { propertyId: body.propertyId, startsAt: { gt: new Date() } } });
+    if (publishedSlots > 0) {
+      const offered = await this.prisma.availabilitySlot.findFirst({ where: { propertyId: body.propertyId, startsAt: { lte: scheduledAt }, endsAt: { gt: scheduledAt } } });
+      if (!offered) throw new ConflictException("That time is not available for this property");
+    }
+    const conflict = await this.prisma.viewing.findFirst({
+      where: { listerId: property.ownerId, scheduledAt, status: { in: [ViewingStatus.REQUESTED, ViewingStatus.CONFIRMED] } }, select: { id: true },
+    });
+    if (conflict) throw new ConflictException("That viewing time has already been requested");
 
     // One open request per seeker and property keeps a lister's queue usable.
     const existing = await this.prisma.viewing.findFirst({
@@ -118,5 +132,19 @@ export class ViewingsController {
       });
     }
     return updated;
+  }
+
+
+  @Roles(UserRole.SEEKER)
+  @Patch(":id/reschedule")
+  async reschedule(@CurrentUser() user: AuthIdentity, @Param("id") id: string, @Body() body: RescheduleViewingDto) {
+    const viewing = await this.get(user, id);
+    if (viewing.status !== ViewingStatus.REQUESTED && viewing.status !== ViewingStatus.CONFIRMED) throw new ForbiddenException("This viewing cannot be rescheduled");
+    const scheduledAt = new Date(body.scheduledAt);
+    if (scheduledAt <= new Date() || scheduledAt.getTime() > Date.now() + maxDaysAhead * 86_400_000) throw new BadRequestException("Viewing date is outside the allowed range");
+    const slots = await this.prisma.availabilitySlot.count({ where: { propertyId: viewing.propertyId, startsAt: { gt: new Date() } } });
+    if (slots && !await this.prisma.availabilitySlot.findFirst({ where: { propertyId: viewing.propertyId, startsAt: { lte: scheduledAt }, endsAt: { gt: scheduledAt } } })) throw new ConflictException("That time is not available for this property");
+    if (await this.prisma.viewing.findFirst({ where: { id: { not: id }, listerId: viewing.listerId, scheduledAt, status: { in: [ViewingStatus.REQUESTED, ViewingStatus.CONFIRMED] } } })) throw new ConflictException("That viewing time has already been requested");
+    return this.prisma.viewing.update({ where: { id }, data: { scheduledAt, status: ViewingStatus.REQUESTED }, include: viewingInclude });
   }
 }

@@ -84,3 +84,8 @@ export class PasswordConfirmationDto {
   @IsNotEmpty()
   password!: string;
 }
+
+export class RequestEmailChangeDto extends PasswordConfirmationDto {
+  @IsEmail()
+  newEmail!: string;
+}

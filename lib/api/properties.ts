@@ -30,6 +30,8 @@ export interface ApiProperty {
   verificationStatus: ApiVerificationStatus;
   createdAt: string;
   updatedAt: string;
+  availabilityConfirmedAt: string | null;
+  expiresAt: string | null;
   images: ApiPropertyImage[];
   amenities: string[];
   documents?: { id: string; documentUrl: string; documentType: string; status: ApiVerificationStatus }[];
@@ -67,6 +69,8 @@ export interface OwnerOverview {
   savedByOthers: number;
 }
 
+export interface ApiAvailabilitySlot { id: string; propertyId: string; startsAt: string; endsAt: string }
+
 export function listProperties(filters: PropertySearchFilters = {}) {
   return apiRequest<PropertyPage>(`/properties${buildQuery({ ...filters })}`, { auth: false, includeMeta: true });
 }
@@ -83,3 +87,7 @@ export const updateProperty = (id: string, input: Record<string, unknown>) => ap
 export const archiveProperty = (id: string) => apiRequest<ApiProperty>(`/properties/${encodeURIComponent(id)}`, { method: "DELETE" });
 export const publishProperty = (id: string) => apiRequest<ApiProperty>(`/properties/${encodeURIComponent(id)}/publish`, { method: "POST" });
 export const pauseProperty = (id: string) => apiRequest<ApiProperty>(`/properties/${encodeURIComponent(id)}/pause`, { method: "POST" });
+export const getPropertyAvailability = (id: string) => apiRequest<ApiAvailabilitySlot[]>(`/properties/${encodeURIComponent(id)}/availability`, { auth: false });
+export const setPropertyAvailability = (id: string, slots: { startsAt: string; endsAt: string }[]) => apiRequest<ApiAvailabilitySlot[]>(`/properties/${encodeURIComponent(id)}/availability`, { method: "PUT", body: { slots } });
+export const confirmPropertyAvailability = (id: string) => apiRequest<ApiProperty>(`/properties/${encodeURIComponent(id)}/confirm-availability`, { method: "POST" });
+export const markPropertyUnavailable = (id: string, status: "SOLD" | "RENTED") => apiRequest<ApiProperty>(`/properties/${encodeURIComponent(id)}/availability-status`, { method: "PATCH", body: { status } });

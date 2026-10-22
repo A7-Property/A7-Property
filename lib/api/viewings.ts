@@ -26,3 +26,5 @@ export const createViewing = (propertyId: string, scheduledAt: string, note?: st
  * The backend rejects any other transition.
  */
 export const updateViewingStatus = (id: string, status: ApiViewingStatus) => apiRequest<ApiViewing>(`/viewings/${encodeURIComponent(id)}/status`, { method: "PATCH", body: { status } });
+export const rescheduleViewing = (id: string, scheduledAt: string) => apiRequest<ApiViewing>(`/viewings/${encodeURIComponent(id)}/reschedule`, { method: "PATCH", body: { scheduledAt } });
+export const cancelViewing = (id: string) => updateViewingStatus(id, "CANCELLED");

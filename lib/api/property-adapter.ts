@@ -69,6 +69,8 @@ export function fromApiProperty(record: ApiProperty): Property {
     lat: record.latitude,
     lng: record.longitude,
     posted_at: record.createdAt,
+    availability_confirmed_at: record.availabilityConfirmedAt,
+    expires_at: record.expiresAt,
     documents: record.documents ? record.documents.map(d => ({ id: d.id, url: d.documentUrl, type: d.documentType, status: d.status })) : undefined,
     image_asset_ids: record.images.flatMap((image) => image.uploadId ? [image.uploadId] : []),
   };

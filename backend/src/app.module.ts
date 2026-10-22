@@ -15,6 +15,7 @@ import { AuthModule } from "./auth/auth.module";
 import { PropertiesModule } from "./properties/properties.module";
 import { UsersModule } from "./users/users.module";
 import { SavedModule } from "./saved/saved.module";
+import { SavedSearchesModule } from "./saved-searches/saved-searches.module";
 import { InquiriesModule } from "./inquiries/inquiries.module";
 import { MessagesModule } from "./messages/messages.module";
 import { ViewingsModule } from "./viewings/viewings.module";
@@ -50,6 +51,7 @@ function throttlerModule(): DynamicModule {
     PropertiesModule,
     UsersModule,
     SavedModule,
+    SavedSearchesModule,
     InquiriesModule,
     MessagesModule,
     ViewingsModule,

@@ -201,11 +201,37 @@ export class PropertiesService {
     const property = await this.assertOwner(ownerId, id);
     if (property.status === PropertyStatus.ARCHIVED) throw new BadRequestException("Archived property cannot be changed");
     if (status === PropertyStatus.PUBLISHED && property.images.length === 0) throw new BadRequestException("Add at least one image before publishing");
-    const updated = await this.prisma.property.update({ where: { id }, data: { status }, include: propertyInclude });
+    const now = new Date();
+    const updated = await this.prisma.property.update({ where: { id }, data: {
+      status,
+      ...(status === PropertyStatus.PUBLISHED && { availabilityConfirmedAt: now, expiresAt: new Date(now.getTime() + 30 * 86_400_000), freshnessReminderSentAt: null }),
+    }, include: propertyInclude });
     await this.audit.record({
       action: AuditAction.PROPERTY_STATUS_CHANGED, actorId: ownerId, actorRole: UserRole.LISTER, targetType: "Property", targetId: id,
       metadata: { from: property.status, to: status }, request,
     });
+    return presentProperty(updated, "lister");
+  }
+
+  async confirmAvailability(ownerId: string, id: string, request?: Request) {
+    const property = await this.assertOwner(ownerId, id);
+    if (property.status !== PropertyStatus.PUBLISHED && property.status !== PropertyStatus.PAUSED) throw new BadRequestException("Only published or paused listings can be confirmed");
+    const now = new Date();
+    const updated = await this.prisma.property.update({
+      where: { id },
+      data: { availabilityConfirmedAt: now, expiresAt: new Date(now.getTime() + 30 * 86_400_000), freshnessReminderSentAt: null },
+      include: propertyInclude,
+    });
+    await this.audit.record({ action: AuditAction.PROPERTY_AVAILABILITY_CONFIRMED, actorId: ownerId, actorRole: UserRole.LISTER, targetType: "Property", targetId: id, request });
+    return presentProperty(updated, "lister");
+  }
+
+  async markUnavailable(ownerId: string, id: string, status: typeof PropertyStatus.SOLD | typeof PropertyStatus.RENTED, request?: Request) {
+    if (status !== PropertyStatus.SOLD && status !== PropertyStatus.RENTED) throw new BadRequestException("Status must be SOLD or RENTED");
+    const property = await this.assertOwner(ownerId, id);
+    if (property.status === PropertyStatus.ARCHIVED) throw new BadRequestException("Archived property cannot be changed");
+    const updated = await this.prisma.property.update({ where: { id }, data: { status, expiresAt: null, freshnessReminderSentAt: null }, include: propertyInclude });
+    await this.audit.record({ action: AuditAction.PROPERTY_STATUS_CHANGED, actorId: ownerId, actorRole: UserRole.LISTER, targetType: "Property", targetId: id, metadata: { from: property.status, to: status }, request });
     return presentProperty(updated, "lister");
   }
 

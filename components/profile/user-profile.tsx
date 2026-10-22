@@ -38,10 +38,12 @@ import { Sheet } from "@/components/ui/sheet";
 import { readStoredJson, STORAGE_KEYS, writeStoredJson } from "@/lib/local-storage";
 import { cn } from "@/lib/utils";
 import { useSavedHomes } from "@/hooks/use-saved-homes";
+import * as authApi from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
 
 type Journey = "rent" | "buy";
 type SettingId = "personal" | "security" | "notifications" | "language" | "privacy" | "help";
-type SettingAction = "password" | "devices" | "communication" | "download" | "delete" | "safety" | null;
+type SettingAction = "password" | "email" | "devices" | "communication" | "download" | "delete" | "safety" | null;
 
 interface Preferences {
   journey: Journey;
@@ -128,7 +130,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: () =
 
 function UserProfile() {
   const { language, isMyanmar, setLanguage, tx } = useLanguage();
-  const { user } = useAuth();
+  const { user, mode } = useAuth();
   const [profile, setProfile] = useState({ name: "", city: "Yangon" });
   const [profileDraft, setProfileDraft] = useState(profile);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -148,6 +150,8 @@ function UserProfile() {
   const [savedSearches, setSavedSearches] = useState(defaultSavedSearches);
   const [communicationAllowed, setCommunicationAllowed] = useState(true);
   const [passwordDraft, setPasswordDraft] = useState({ password: "", confirm: "" });
+  const [emailDraft, setEmailDraft] = useState({ email: "", password: "" });
+  const [emailSending, setEmailSending] = useState(false);
   const [safetyReport, setSafetyReport] = useState("");
   const [deleteConfirmation, setDeleteConfirmation] = useState("");
   const [hydrated, setHydrated] = useState(false);
@@ -248,6 +252,21 @@ function UserProfile() {
     }
     setPasswordDraft({ password: "", confirm: "" });
     setSettingNotice("Password updated on this device.");
+  }
+
+  async function requestEmailChange() {
+    if (mode !== "server") { setSettingNotice("Email changes require the A7 account service."); return; }
+    setEmailSending(true);
+    setSettingNotice("");
+    try {
+      await authApi.requestEmailChange(emailDraft.email.trim(), emailDraft.password);
+      setEmailDraft({ email: "", password: "" });
+      setSettingNotice("Check the new address for a confirmation link. Your current email stays active until you confirm it.");
+    } catch (error) {
+      setSettingNotice(error instanceof ApiError ? error.message : "The email change request could not be sent.");
+    } finally {
+      setEmailSending(false);
+    }
   }
 
   function downloadProfileData() {
@@ -490,8 +509,17 @@ function UserProfile() {
 
           {activeSetting === "security" && !settingAction && (
             <div className="space-y-3">
+              <button type="button" onClick={() => setSettingAction("email")} className="flex w-full items-center justify-between rounded-2xl border border-[#E0E4E8] p-4 text-left text-xs font-semibold">Change email <ChevronRight className="size-4" /></button>
               <button type="button" onClick={() => setSettingAction("password")} className="flex w-full items-center justify-between rounded-2xl border border-[#E0E4E8] p-4 text-left text-xs font-semibold">Change password <ChevronRight className="size-4" /></button>
               <button type="button" onClick={() => setSettingAction("devices")} className="flex w-full items-center justify-between rounded-2xl border border-[#E0E4E8] p-4 text-left text-xs font-semibold">Signed-in devices <span className="text-[10px] font-normal text-[#7A848E]">1 device</span></button>
+            </div>
+          )}
+          {activeSetting === "security" && settingAction === "email" && (
+            <div className="space-y-4">
+              <p className="text-[11px] leading-5 text-[#667085]">Your current email remains active until you confirm the link sent to the new address. Confirmation signs every device out.</p>
+              <label className="block"><span className="text-[11px] font-semibold">New email</span><input type="email" value={emailDraft.email} onChange={(event) => setEmailDraft({ ...emailDraft, email: event.target.value })} autoComplete="email" className="mt-2 h-12 w-full rounded-xl border border-[#CCD5DF] px-4 text-sm outline-none focus:border-[#0057D9]" /></label>
+              <label className="block"><span className="text-[11px] font-semibold">Current password</span><input type="password" value={emailDraft.password} onChange={(event) => setEmailDraft({ ...emailDraft, password: event.target.value })} autoComplete="current-password" className="mt-2 h-12 w-full rounded-xl border border-[#CCD5DF] px-4 text-sm outline-none focus:border-[#0057D9]" /></label>
+              <Button className="w-full rounded-full" disabled={emailSending || !emailDraft.email || !emailDraft.password} onClick={() => void requestEmailChange()}>{emailSending ? "Sending…" : "Send confirmation link"}</Button>
             </div>
           )}
           {activeSetting === "security" && settingAction === "password" && (

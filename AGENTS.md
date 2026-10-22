@@ -19,7 +19,7 @@ A7 Property is a mobile-first Myanmar property marketplace frontend. It supports
 - The UI runs in one of two modes, decided by `NEXT_PUBLIC_API_URL`:
   - **device mode** (variable unset, how the deployed site runs today): there are no listings and no server-backed accounts; the marketplace renders honest empty states and browser-local journeys contain only the viewer's own activity.
   - **server mode** (variable set): every journey is backed by the NestJS API in `backend/` — accounts and sessions, email verification and password reset, listing discovery, search, property detail, comparison, saved homes, inquiries, viewing requests, message threads, the seeker dashboard and the owner/agent CRM.
-- Still device-local in **both** modes, because no endpoint exists for them: recently viewed, saved searches, comparison selection, and profile preferences. The CRM's listing-views/conversion analytics were removed rather than kept as fabricated numbers.
+- Still device-local in **both** modes, because no endpoint exists for them: recently viewed, comparison selection, and profile preferences. Saved searches sync for signed-in seekers in server mode and remain browser-local for guests/device mode. The CRM's listing-views/conversion analytics were removed rather than kept as fabricated numbers.
 - `isApiConfigured()` in `lib/api/client.ts` is the single check for which mode is active. Never let a component claim a server session that is not configured, and never let a server-mode screen show demo fixtures: an unreachable API yields an empty list, never invented records.
 - Do not invent APIs, databases, payments, analytics, or live AI unless the user explicitly expands the scope. The backend is real, but only the endpoints in `backend/README.md` exist.
 - Keep simulated actions honest in the UI. Anything still device-local — messaging, viewing requests, listing edits, saved homes, the assistant — must remain labelled as browser/device-local demo behavior. There is no OAuth on either side: server mode must say social sign-in is unavailable rather than fake it.
@@ -75,7 +75,7 @@ Public routes:
 - `/compare` — device-local comparison, maximum four homes
 - `/assistant` — deterministic browser-based matching demo
 - `/community`, `/help`, `/privacy`, `/terms`, `/sign-in`
-- `/verify-email`, `/reset-password`, `/forgot-password` — the targets of the backend's transactional emails. They must keep working in device mode by stating plainly that no API is configured, and must never imply an address was confirmed or an email sent. All three are `noindex`.
+- `/verify-email`, `/confirm-email-change`, `/reset-password`, `/forgot-password` — the targets of the backend's transactional emails. They must keep working in device mode by stating plainly that no API is configured, and must never imply an address was confirmed or an email sent. All four are `noindex`.
 
 Auth-bound routes:
 
@@ -142,7 +142,7 @@ The user's supplied Myanmar face is the required font for **all Myanmar UI text*
 
 ## Device-local state contract
 
-There are no device-local accounts: `AuthProvider` only restores a session from the API's HttpOnly refresh cookie, and without an API the viewer stays signed out. The journeys that remain device-local in both modes — recently viewed, saved searches, comparison selection, conversations and viewing requests in device mode, profile preferences, and CRM drafts — use the keys centralized in `lib/local-storage.ts`.
+There are no device-local accounts: `AuthProvider` only restores a session from the API's HttpOnly refresh cookie, and without an API the viewer stays signed out. The journeys that remain device-local — recently viewed, comparison selection, conversations and viewing requests in device mode, profile preferences, CRM drafts, plus saved searches for guests/device mode — use the keys centralized in `lib/local-storage.ts`.
 
 - Reuse `readStoredIds`, `writeStoredIds`, `readStoredJson`, and `writeStoredJson`.
 - Do not access duplicate ad-hoc keys when a centralized key exists.

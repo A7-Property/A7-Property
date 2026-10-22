@@ -59,7 +59,7 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
   const createRequested = role === "owner" && searchParams.get("create") === "1";
   const displayName = user?.fullName || tx("Property owner", "အိမ်ရှင်");
   const displayInitials = displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-  const { portfolio, ready: portfolioReady, failed: portfolioFailed, overview, refresh: refreshPortfolio, serverBacked, updateListing, createListing: createNewListing, publish, pause, archiveListing } = useListerPortfolio(role, properties);
+  const { portfolio, ready: portfolioReady, failed: portfolioFailed, overview, refresh: refreshPortfolio, serverBacked, updateListing, createListing: createNewListing, publish, pause, archiveListing, confirmAvailability, markUnavailable } = useListerPortfolio(role, properties);
   const { failed: conversationsFailed, refresh: refreshConversations, conversations, loadThread, sendReply: submitReply, startFromViewing } = useConversations();
   const { failed: viewingsFailed, refresh: refreshViewings, appointments, changeStatus } = useViewings();
 
@@ -289,6 +289,20 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
     });
   }
 
+  async function confirmListingAvailability(property: Property) {
+    await runPropertyAction(property.id, async () => {
+      if (await confirmAvailability(property.id)) setNotice(tx(`${property.title} is confirmed available for another 30 days.`, `${property.title} ကို နောက်ထပ် ရက် ၃၀ ရရှိနိုင်ကြောင်း အတည်ပြုပြီးပါပြီ။`));
+    });
+  }
+
+  async function markListingUnavailable(property: Property) {
+    const nextStatus = property.purpose === "sale" ? "SOLD" : "RENTED";
+    if (!window.confirm(tx(`Mark ${property.title} as ${nextStatus.toLowerCase()}?`, `${property.title} ကို ${nextStatus === "SOLD" ? "ရောင်းပြီး" : "ငှားပြီး"}ဟု သတ်မှတ်မလား။`))) return;
+    await runPropertyAction(property.id, async () => {
+      if (await markUnavailable(property.id, nextStatus)) setNotice(tx(`${property.title} was marked ${nextStatus.toLowerCase()}.`, `${property.title} အခြေအနေကို ပြောင်းပြီးပါပြီ။`));
+    });
+  }
+
   function handleEditorOpenChange(open: boolean) {
     setEditorOpen(open);
     if (!open && createRequested) router.replace("/owner", { scroll: false });
@@ -432,7 +446,7 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
       </section>
 
       <div className="mt-5 grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,.6fr)]">
-        <ListerPropertiesPanel properties={portfolio} ready={portfolioReady} failed={portfolioFailed} serverBacked={serverBacked} pendingIds={pendingPropertyIds} onCreate={createListing} onEdit={editListing} onTogglePublish={togglePublish} onArchive={archive} onRetry={refreshPortfolio}>
+        <ListerPropertiesPanel properties={portfolio} ready={portfolioReady} failed={portfolioFailed} serverBacked={serverBacked} pendingIds={pendingPropertyIds} onCreate={createListing} onEdit={editListing} onTogglePublish={togglePublish} onArchive={archive} onConfirmAvailability={confirmListingAvailability} onMarkUnavailable={markListingUnavailable} onRetry={refreshPortfolio}>
           {drafts.length > 0 && <div className="min-w-0 border-b border-[#D0DEF0] bg-[#FFF9ED] p-4 sm:p-5"><p className="text-[9px] font-semibold uppercase tracking-wider text-[#8A5A17]">{tx("Saved on this device", "ဤစက်တွင် သိမ်းထားသည်")}</p><div className="mt-3 grid min-w-0 gap-2 sm:grid-cols-2">{drafts.map((draft) => <div key={`${draft.title}-${draft.township}`} className="min-w-0 rounded-xl border border-[#E8D9B8] bg-white p-3"><strong className="block truncate text-[11px]">{draft.title}</strong><span className="mt-1 block truncate text-[9px] text-[#776849]">{draft.township} · {Number(draft.price).toLocaleString()} MMK · {tx("Draft", "မူကြမ်း")}</span></div>)}</div></div>}
         </ListerPropertiesPanel>
 
