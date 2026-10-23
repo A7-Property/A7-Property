@@ -15,7 +15,7 @@ interface SearchPropertyCardProps {
   property: Property;
   isFavorite: boolean;
   selected?: boolean;
-  onFavoriteToggle: (property: Property) => void;
+  onFavoriteToggle?: (property: Property) => void;
   onFocus?: (property: Property) => void;
 }
 
@@ -41,9 +41,9 @@ function SearchPropertyCard({ property, isFavorite, selected, onFavoriteToggle, 
           {verified && <TrustBadge>{tx("Verified", "စိစစ်ပြီး")}</TrustBadge>}
           <span className="rounded-lg border border-white/70 bg-[#202124]/78 px-2.5 py-1.5 text-[11px] font-semibold text-white backdrop-blur"><Camera className="mr-1.5 inline size-3.5" />{property.images.length} {tx("photos", "ဓာတ်ပုံ")}</span>
         </div>
-        <Button variant="ghost" size="icon" className={cn("absolute right-3 top-3 z-20 size-11 border border-white/80 bg-white/94 shadow-sm hover:bg-white", isFavorite ? "text-[#123B73]" : "text-[#101828]")} aria-label={isFavorite ? tx(`Remove ${property.title} from saved homes`, `${property.title} ကို သိမ်းထားမှုမှဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)} aria-pressed={isFavorite} onClick={() => onFavoriteToggle(property)}>
+        {onFavoriteToggle && <Button variant="ghost" size="icon" className={cn("absolute right-3 top-3 z-20 size-11 border border-white/80 bg-white/94 shadow-sm hover:bg-white", isFavorite ? "text-[#123B73]" : "text-[#101828]")} aria-label={isFavorite ? tx(`Remove ${property.title} from saved homes`, `${property.title} ကို သိမ်းထားမှုမှဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)} aria-pressed={isFavorite} onClick={() => onFavoriteToggle(property)}>
           <Heart className="size-5" fill={isFavorite ? "currentColor" : "none"} />
-        </Button>
+        </Button>}
       </div>
 
       <div className="flex min-w-0 flex-col p-4 sm:p-5">

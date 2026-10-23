@@ -79,13 +79,38 @@ test("property detail exposes split conversion and defers the interactive map", 
   assert.match(sections, /Approximate area preview/);
 });
 
+test("lister accounts are not offered seeker-only property actions", async () => {
+  const [detail, inquiry, savedHomes, savedSearches, savedController, messagesController, viewingsController] = await Promise.all([
+    source("components/property/property-detail-view.tsx"),
+    source("components/property/inquiry-sheet.tsx"),
+    source("hooks/use-saved-homes.ts"),
+    source("hooks/use-web-saved-searches.ts"),
+    source("backend/src/saved/saved.controller.ts"),
+    source("backend/src/messages/messages.controller.ts"),
+    source("backend/src/viewings/viewings.controller.ts"),
+  ]);
+
+  assert.match(detail, /user\?\.accountType === "lister"/);
+  assert.match(detail, /onToggleFavorite=\{canOfferSave \? toggleFavorite : undefined\}/);
+  assert.match(detail, /!isLister && <InquirySheet/);
+  assert.match(inquiry, /user\?\.accountType !== "seeker"/);
+  assert.match(savedHomes, /canOfferSave/);
+  assert.match(savedSearches, /user\?\.accountType === "seeker"/);
+  assert.match(savedController, /@Roles\(UserRole\.SEEKER\)/);
+  assert.match(messagesController, /@Roles\(UserRole\.SEEKER\)[\s\S]*?@Post\(\)[\s\S]*?async create\(/);
+  assert.match(viewingsController, /@Roles\(UserRole\.SEEKER\)[\s\S]*?create/);
+});
+
 test("property reports and saved-search alerts stay server-backed and moderated", async () => {
-  const [schema, reports, maintenance, savedSearches, admin] = await Promise.all([
+  const [schema, reports, maintenance, savedSearches, admin, adminClient, adminService, adminDto] = await Promise.all([
     source("backend/prisma/schema.prisma"),
     source("backend/src/reports/reports.service.ts"),
     source("backend/src/maintenance/maintenance.service.ts"),
     source("components/web/saved-searches.tsx"),
     source("components/dashboard/admin/admin-dashboard.tsx"),
+    source("lib/api/admin.ts"),
+    source("backend/src/admin/admin.service.ts"),
+    source("backend/src/admin/dto.ts"),
   ]);
   assert.match(schema, /model PropertyReport/);
   assert.match(reports, /You already have a pending report for this listing/);
@@ -94,6 +119,14 @@ test("property reports and saved-search alerts stay server-backed and moderated"
   assert.match(maintenance, /lastMatchedAt: \{ equals: search\.lastMatchedAt \}/);
   assert.match(savedSearches, /Email me new matches/);
   assert.match(admin, /Pending Listing Reports/);
+  assert.match(admin, /Unified queue/);
+  assert.match(admin, /Reason \(required\)/);
+  assert.match(admin, /Type DELETE to continue/);
+  assert.doesNotMatch(admin, /window\.confirm/);
+  assert.match(adminClient, /ApiPage<AdminProperty>/);
+  assert.match(adminClient, /includeMeta: true/);
+  assert.match(adminService, /reporter: \{ email: \{ contains: query\.search/);
+  assert.match(adminDto, /class AdminPropertyReportQueryDto[\s\S]*?search\?: string/);
 });
 
 test("sign-in follows the shared language preference and offers no fake provider sign-in", async () => {

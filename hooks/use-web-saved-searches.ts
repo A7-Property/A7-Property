@@ -15,8 +15,9 @@ function read() {
 /** Browser-local bookmarks only. Never seeds searches or claims to send alerts. */
 export function useWebSavedSearches() {
   const serverBacked = isApiConfigured();
-  const { status } = useAuth();
-  const syncedToAccount = serverBacked && status === "authenticated";
+  const { status, user } = useAuth();
+  const syncedToAccount = serverBacked && status === "authenticated" && user?.accountType === "seeker";
+  const canOfferSave = !serverBacked || status !== "authenticated" || user?.accountType === "seeker";
   const [searches, setSearches] = useState<SavedSearchRecord[]>([]);
   const [ready, setReady] = useState(false);
   useEffect(() => {
@@ -29,6 +30,10 @@ export function useWebSavedSearches() {
       }).catch(() => { if (!cancelled) setSearches([]); }).finally(() => { if (!cancelled) setReady(true); });
       return () => { cancelled = true; };
     }
+    if (!canOfferSave) {
+      queueMicrotask(() => { setSearches([]); setReady(true); });
+      return;
+    }
     queueMicrotask(sync);
     function changed(event: Event) {
       if ((event as CustomEvent<{ key: string }>).detail?.key === STORAGE_KEYS.savedSearches) sync();
@@ -37,8 +42,9 @@ export function useWebSavedSearches() {
     window.addEventListener("a7:stored-json-change", changed);
     window.addEventListener("storage", stored);
     return () => { window.removeEventListener("a7:stored-json-change", changed); window.removeEventListener("storage", stored); };
-  }, [serverBacked, status, syncedToAccount]);
+  }, [serverBacked, status, syncedToAccount, canOfferSave]);
   const save = useCallback((record: SavedSearchRecord) => {
+    if (!canOfferSave) return;
     if (syncedToAccount) {
       const params = Object.fromEntries(new URLSearchParams(record.href.split("?")[1] ?? ""));
       void savedSearchesApi.createSavedSearch({ ...record, filters: params }).then((saved) => {
@@ -48,7 +54,7 @@ export function useWebSavedSearches() {
     }
     const next = [record, ...read().filter((item) => item.href !== record.href && item.id !== record.id)].slice(0, 12);
     writeStoredJson(STORAGE_KEYS.savedSearches, next);
-  }, [syncedToAccount]);
+  }, [syncedToAccount, canOfferSave]);
   const remove = useCallback((id: string) => {
     if (syncedToAccount) { void savedSearchesApi.deleteSavedSearch(id).then(() => setSearches((current) => current.filter((item) => item.id !== id))); return; }
     writeStoredJson(STORAGE_KEYS.savedSearches, read().filter((item) => item.id !== id));
@@ -59,5 +65,5 @@ export function useWebSavedSearches() {
     setSearches((current) => current.map((item) => item.id === id ? { ...item, notificationsEnabled: updated.notificationsEnabled } : item));
     return true;
   }, [syncedToAccount]);
-  return { searches, ready, save, remove, setNotifications, serverBacked: syncedToAccount };
+  return { searches, ready, save, remove, setNotifications, serverBacked: syncedToAccount, canOfferSave };
 }

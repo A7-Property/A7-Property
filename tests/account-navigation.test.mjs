@@ -32,12 +32,13 @@ async function renderHeader(user, myanmar) {
   return renderToStaticMarkup(React.createElement(exports.WebShell, null, "Content"));
 }
 
-test("My account opens profile for every signed-in role in both languages; guests still sign in", async () => {
+test("My account opens profile for every signed-in role while listers are not offered seeker saves", async () => {
   for (const myanmar of [false, true]) {
     for (const accountType of ["seeker", "lister", "admin"]) {
       const html = await renderHeader({ accountType }, myanmar);
       assert.match(html, new RegExp(`<a href="/profile"[^>]*>${myanmar ? "ကျွန်ုပ်အကောင့်" : "My account"}</a>`));
-      assert.match(html, /<a href="\/saved" class="web-saved-link">/);
+      if (accountType === "lister") assert.doesNotMatch(html, /<a href="\/saved" class="web-saved-link">/);
+      else assert.match(html, /<a href="\/saved" class="web-saved-link">/);
       assert.match(html, /<a href="\/owner\?create=1">/); // Listing management retains its own entry.
     }
     const html = await renderHeader(null, myanmar);

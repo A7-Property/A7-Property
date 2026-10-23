@@ -33,6 +33,8 @@ export interface SavedHomes {
   ready: boolean;
   /** True when this viewer is allowed to save at all. */
   canSave: boolean;
+  /** False only when an authenticated lister must not be offered seeker actions. */
+  canOfferSave: boolean;
 }
 
 export function useSavedHomes(): SavedHomes {
@@ -53,6 +55,7 @@ export function useSavedHomes(): SavedHomes {
   }, [savedIds]);
 
   const canSave = serverBacked ? status === "authenticated" && user?.accountType === "seeker" : true;
+  const canOfferSave = !serverBacked || status !== "authenticated" || user?.accountType === "seeker";
 
   useEffect(() => {
     let cancelled = false;
@@ -162,5 +165,5 @@ export function useSavedHomes(): SavedHomes {
   // Depends on state, not the ref, so callers re-render when the list changes.
   const isSaved = useCallback((propertyId: string) => savedIds.includes(propertyId), [savedIds]);
 
-  return { savedIds, isSaved, toggleSaved, ready, canSave };
+  return { savedIds, isSaved, toggleSaved, ready, canSave, canOfferSave };
 }

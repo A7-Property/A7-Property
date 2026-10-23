@@ -49,6 +49,9 @@ const prismaStatus: Record<string, { status: number; message: string }> = {
   P2025: { status: HttpStatus.NOT_FOUND, message: "Record not found" },
   P2000: { status: HttpStatus.BAD_REQUEST, message: "A value is too long for its field" },
   P2014: { status: HttpStatus.BAD_REQUEST, message: "That change would break a required relation" },
+  // These indicate deployment/schema drift, not bad input from the caller.
+  P2021: { status: HttpStatus.SERVICE_UNAVAILABLE, message: "The service is temporarily unavailable" },
+  P2022: { status: HttpStatus.SERVICE_UNAVAILABLE, message: "The service is temporarily unavailable" },
 };
 
 /**

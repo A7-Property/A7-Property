@@ -8,9 +8,9 @@ import { ProgressiveImage } from "@/components/ui/progressive-image";
 import type { SavedHomes } from "@/hooks/use-saved-homes";
 import { formatPropertyPrice, propertyTypeLabels, propertyTypeLabelsMy, type Property } from "@/lib/properties";
 
-export function WebPropertyCard({ property, selected, onSelect, savedHomes }: { property: Property; selected?: boolean; onSelect?: (id: string) => void; savedHomes: Pick<SavedHomes, "isSaved" | "toggleSaved"> }) {
+export function WebPropertyCard({ property, selected, onSelect, savedHomes }: { property: Property; selected?: boolean; onSelect?: (id: string) => void; savedHomes: Pick<SavedHomes, "isSaved" | "toggleSaved" | "canOfferSave"> }) {
   const { tx, isMyanmar } = useLanguage();
-  const { isSaved, toggleSaved } = savedHomes;
+  const { isSaved, toggleSaved, canOfferSave } = savedHomes;
   const [saving, setSaving] = useState(false);
   const [photoFailed, setPhotoFailed] = useState(false);
   const saved = isSaved(property.id);
@@ -38,7 +38,7 @@ export function WebPropertyCard({ property, selected, onSelect, savedHomes }: { 
           {property.purpose === "rent" && property.amenities.length > 0 && <p className="web-card-amenities">{property.amenities.slice(0, 3).join(" · ")}</p>}
         </div>
       </Link>
-      <button className="web-favorite" type="button" aria-pressed={saved} disabled={saving} onClick={() => void save()} aria-label={saved ? tx(`Unsave ${property.title}`, `${property.title} ကို ဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)}><Heart fill={saved ? "currentColor" : "none"} /></button>
+      {canOfferSave && <button className="web-favorite" type="button" aria-pressed={saved} disabled={saving} onClick={() => void save()} aria-label={saved ? tx(`Unsave ${property.title}`, `${property.title} ကို ဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)}><Heart fill={saved ? "currentColor" : "none"} /></button>}
       {onSelect && property.lat !== null && property.lng !== null && <button className="web-card-map" type="button" aria-pressed={Boolean(selected)} onClick={() => onSelect(property.id)}><MapPin />{tx("Show on map", "မြေပုံတွင်ကြည့်ရန်")}</button>}
     </article>
   );

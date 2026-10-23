@@ -194,15 +194,15 @@ model LoginAttempt {
 }
 
 model EmailToken {
-  id         String         @id @default(cuid())
-  userId     String
-  type       EmailTokenType
-  tokenHash  String         @unique
-  expiresAt  DateTime
-  consumedAt DateTime?
+  id           String         @id @default(cuid())
+  userId       String
+  type         EmailTokenType
+  tokenHash    String         @unique
+  expiresAt    DateTime
+  consumedAt   DateTime?
   pendingEmail String?
-  createdAt  DateTime       @default(now())
-  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now())
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type, consumedAt])
   @@index([expiresAt])
@@ -243,45 +243,45 @@ model RefreshSession {
 }
 
 model Property {
-  id                 String             @id @default(cuid())
-  ownerId            String
-  title              String
-  description        String
-  propertyType       PropertyType
-  listingType        ListingType
-  price              Decimal            @db.Decimal(16, 2)
-  currency           String             @default("MMK")
-  bedrooms           Int
-  bathrooms          Int
-  areaSqft           Int
-  address            String
-  city               String
-  township           String
-  state              String?
-  country            String             @default("Myanmar")
-  latitude           Decimal?           @db.Decimal(10, 7)
-  longitude          Decimal?           @db.Decimal(10, 7)
-  floor              Int?
-  yearBuilt          Int?
-  furniture          FurnitureStatus?
-  rating             Float?
-  status             PropertyStatus     @default(DRAFT)
-  verificationStatus VerificationStatus @default(UNVERIFIED)
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  id                      String             @id @default(cuid())
+  ownerId                 String
+  title                   String
+  description             String
+  propertyType            PropertyType
+  listingType             ListingType
+  price                   Decimal            @db.Decimal(16, 2)
+  currency                String             @default("MMK")
+  bedrooms                Int
+  bathrooms               Int
+  areaSqft                Int
+  address                 String
+  city                    String
+  township                String
+  state                   String?
+  country                 String             @default("Myanmar")
+  latitude                Decimal?           @db.Decimal(10, 7)
+  longitude               Decimal?           @db.Decimal(10, 7)
+  floor                   Int?
+  yearBuilt               Int?
+  furniture               FurnitureStatus?
+  rating                  Float?
+  status                  PropertyStatus     @default(DRAFT)
+  verificationStatus      VerificationStatus @default(UNVERIFIED)
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
   availabilityConfirmedAt DateTime?
-  expiresAt          DateTime?
+  expiresAt               DateTime?
   freshnessReminderSentAt DateTime?
-  owner              User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
-  images             PropertyImage[]
-  amenities          PropertyAmenity[]
-  savedBy            SavedProperty[]
-  inquiries          Inquiry[]
-  conversations      Conversation[]
-  viewings           Viewing[]
-  availabilitySlots AvailabilitySlot[]
-  documents          PropertyDocument[]
-  reports            PropertyReport[]
+  owner                   User               @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  images                  PropertyImage[]
+  amenities               PropertyAmenity[]
+  savedBy                 SavedProperty[]
+  inquiries               Inquiry[]
+  conversations           Conversation[]
+  viewings                Viewing[]
+  availabilitySlots       AvailabilitySlot[]
+  documents               PropertyDocument[]
+  reports                 PropertyReport[]
 
   @@index([status, listingType, createdAt])
   @@index([city, township, propertyType])
@@ -329,17 +329,17 @@ model SavedProperty {
 }
 
 model SavedSearch {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   userId               String
   title                String
-  detail               String   @default("")
+  detail               String    @default("")
   href                 String
   filters              Json
-  notificationsEnabled Boolean  @default(false)
+  notificationsEnabled Boolean   @default(false)
   lastMatchedAt        DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, href])
   @@index([userId, createdAt])

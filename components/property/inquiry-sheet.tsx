@@ -114,6 +114,14 @@ function InquirySheet({ open, onOpenChange, mode, property }: InquirySheetProps)
   }
 
   function submit() {
+    if (user?.accountType !== "seeker") {
+      toast({
+        tone: "info",
+        title: tx("This action is for seeker accounts", "ဤလုပ်ဆောင်ချက်သည် အိမ်ရှာသူအကောင့်အတွက်သာ"),
+        description: tx("Lister accounts cannot contact another listing or request a viewing.", "စာရင်းတင်သူအကောင့်သည် အခြားအိမ်စာရင်းကို ဆက်သွယ်ခြင်း သို့မဟုတ် အိမ်ကြည့်ရန် တောင်းဆိုခြင်း မပြုနိုင်ပါ။"),
+      });
+      return;
+    }
     if (serverBacked) {
       void submitToServer();
       return;

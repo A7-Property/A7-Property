@@ -71,6 +71,16 @@ describe("HttpExceptionFilter", () => {
     expect(JSON.stringify(captured.body)).not.toContain("db:5432");
   });
 
+  it("reports unapplied database migrations as unavailable rather than a bad admin request", () => {
+    for (const code of ["P2021", "P2022"]) {
+      const captured: Captured = {};
+      filter.catch(new Prisma.PrismaClientKnownRequestError("A private schema detail", { code, clientVersion: "7.10.0" }), hostFor(captured));
+      expect(captured.status).toBe(HttpStatus.SERVICE_UNAVAILABLE);
+      expect(captured.body?.message).toBe("The service is temporarily unavailable");
+      expect(JSON.stringify(captured.body)).not.toContain("private schema detail");
+    }
+  });
+
   it("reports a connection timeout as unavailable too", () => {
     const captured: Captured = {};
     filter.catch(new Prisma.PrismaClientKnownRequestError("Timed out", { code: "P1008", clientVersion: "7.10.0" }), hostFor(captured));

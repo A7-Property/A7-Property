@@ -27,7 +27,7 @@ export function WebSearch({ initial, initialQuery }: { initial: WebSearchPage; i
   const [draft, setDraft] = useState(state);
   const [invalid, setInvalid] = useState(false);
   const resultsRef = useRef<HTMLElement>(null);
-  const { save, serverBacked: savedSearchesServerBacked } = useWebSavedSearches();
+  const { save, serverBacked: savedSearchesServerBacked, canOfferSave: canOfferSavedSearch } = useWebSavedSearches();
   const savedHomes = useSavedHomes();
   const { toast } = useToast();
   useEffect(() => { queueMicrotask(() => setInput(state.query)); }, [state.query]);
@@ -62,7 +62,7 @@ export function WebSearch({ initial, initialQuery }: { initial: WebSearchPage; i
         <button type="button" className={`web-filter-button ${state.beds !== null || state.baths !== null ? "is-active" : ""}`} onClick={() => openFilters("rooms")}>{tx("Beds & baths", "အခန်းများ")}<ChevronDown /></button>
         <button type="button" className={`web-filter-button ${state.type ? "is-active" : ""}`} onClick={() => openFilters("type")}>{state.type ? isMyanmar ? propertyTypeLabelsMy[state.type] : propertyTypeLabels[state.type] : tx("Property type", "အိမ်အမျိုးအစား")}<ChevronDown /></button>
         <button type="button" className="web-filter-button" onClick={() => openFilters("all")} aria-label={tx("Open all filters", "စစ်ထုတ်မှုအားလုံးဖွင့်ရန်")}><SlidersHorizontal />{tx("Filters", "စစ်ထုတ်ရန်")}</button>
-        <button type="button" className="web-button web-button-primary" onClick={saveSearch}><Bookmark />{tx("Save search", "ရှာဖွေမှုသိမ်းရန်")}</button>
+        {canOfferSavedSearch && <button type="button" className="web-button web-button-primary" onClick={saveSearch}><Bookmark />{tx("Save search", "ရှာဖွေမှုသိမ်းရန်")}</button>}
       </div>
       <div className="web-search-body">
         <div className="web-map-pane"><PropertyMap properties={page.properties} selectedId={selected} onSelect={(id) => select(id, true)} className="web-property-map" showPrivacyNotice={false} showLiveLabel={false} keyboardSelection tileUrl="https://tile.openstreetmap.org/{z}/{x}/{y}.png" /><div className="web-map-note"><MapPin /><span>{loading ? tx("Updating results…", "ရလဒ်များပြင်ဆင်နေသည်…") : tx(`${located.length} homes with locations on this page`, `ဤစာမျက်နှာတွင် တည်နေရာပါ အိမ် ${located.length} လုံး`)}<small>{tx("Listings without coordinates appear in the results only.", "တည်နေရာမပါသောအိမ်များကို ရလဒ်စာရင်းတွင်သာ ဖော်ပြပါသည်။")}</small></span></div></div>

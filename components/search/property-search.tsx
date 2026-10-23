@@ -63,7 +63,7 @@ function PropertySearch({ properties }: { properties: Property[] }) {
   const [mapOpen, setMapOpen] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { savedIds: saved, toggleSaved } = useSavedHomes();
+  const { savedIds: saved, toggleSaved, canOfferSave } = useSavedHomes();
   const [saveNotice, setSaveNotice] = useState<{ id: string; title: string; saved: boolean } | null>(null);
   const [visibleCount, setVisibleCount] = useState(24);
   const reduceMotion = useReducedMotion();
@@ -154,7 +154,7 @@ function PropertySearch({ properties }: { properties: Property[] }) {
                   <AnimatePresence initial={false}>
                     {results.slice(0, 18).map((property) => (
                       <motion.div key={property.id} layout initial={cardInitial} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }} transition={cardTransition}>
-                        <SearchPropertyCard property={property} isFavorite={saved.includes(property.id)} selected={selectedId === property.id} onFavoriteToggle={handleToggleSaved} onFocus={(item) => setSelectedId(item.id)} />
+                        <SearchPropertyCard property={property} isFavorite={saved.includes(property.id)} selected={selectedId === property.id} onFavoriteToggle={canOfferSave ? handleToggleSaved : undefined} onFocus={(item) => setSelectedId(item.id)} />
                       </motion.div>
                     ))}
                   </AnimatePresence>
@@ -166,7 +166,7 @@ function PropertySearch({ properties }: { properties: Property[] }) {
                 <AnimatePresence initial={false}>
                   {results.slice(0, visibleCount).map((property) => (
                     <motion.div key={property.id} layout initial={cardInitial} animate={{ opacity: 1, y: 0 }} exit={reduceMotion ? undefined : { opacity: 0, scale: 0.98 }} transition={cardTransition}>
-                      <SearchPropertyCard property={property} isFavorite={saved.includes(property.id)} selected={false} onFavoriteToggle={handleToggleSaved} onFocus={(item) => setSelectedId(item.id)} />
+                      <SearchPropertyCard property={property} isFavorite={saved.includes(property.id)} selected={false} onFavoriteToggle={canOfferSave ? handleToggleSaved : undefined} onFocus={(item) => setSelectedId(item.id)} />
                     </motion.div>
                   ))}
                 </AnimatePresence>

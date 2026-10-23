@@ -31,6 +31,7 @@ export class AdminUserStatusDto {
 }
 
 export class AuditLogQueryDto {
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
   @IsOptional() @IsEnum(AuditAction) action?: AuditAction;
   @IsOptional() @IsString() @MaxLength(128) actorId?: string;
   @IsOptional() @IsString() @MaxLength(128) targetId?: string;
@@ -52,6 +53,7 @@ export class AdminVerificationDocumentDecisionDto {
 
 export class AdminPropertyReportQueryDto {
   @IsOptional() @IsEnum(PropertyReportStatus) status?: PropertyReportStatus;
+  @IsOptional() @IsString() @MaxLength(200) search?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
 }

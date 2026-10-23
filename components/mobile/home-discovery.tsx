@@ -45,7 +45,7 @@ function HomeDiscovery({ recommendedByPurpose, locationCounts }: HomeDiscoveryPr
   const reduceMotion = useReducedMotion();
   const [mode, setMode] = useState<HomeMode>("rent");
   const [query, setQuery] = useState("");
-  const { savedIds: saved, toggleSaved } = useSavedHomes();
+  const { savedIds: saved, toggleSaved, canOfferSave } = useSavedHomes();
 
   const purpose: Property["purpose"] = mode === "rent" ? "rent" : "sale";
   const searchHref = buildSearchHref(mode);
@@ -168,7 +168,7 @@ function HomeDiscovery({ recommendedByPurpose, locationCounts }: HomeDiscoveryPr
             <Link href={browseAllHref} className="inline-flex h-11 shrink-0 items-center justify-center text-[14px] font-semibold leading-none text-[#0053D2]">{tx("View all", "အားလုံးကြည့်ရန်")}</Link>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-5">
-            {recommended.map((property) => <HomePropertyCard key={property.id} property={property} saved={saved.includes(property.id)} isMyanmar={isMyanmar} tx={tx} priority={false} onToggleSaved={handleToggleSaved} />)}
+            {recommended.map((property) => <HomePropertyCard key={property.id} property={property} saved={saved.includes(property.id)} isMyanmar={isMyanmar} tx={tx} priority={false} onToggleSaved={canOfferSave ? handleToggleSaved : undefined} />)}
           </div>
           {recommended.length === 0 && (
             <div className="mt-4 rounded-[20px] border border-dashed border-[#4DA3FF] bg-[#F8FBFF] px-6 py-10 text-center">
@@ -207,7 +207,7 @@ function LocationCard({ location, mode, isMyanmar, propertyCount, priority }: { 
   );
 }
 
-function HomePropertyCard({ property, saved, isMyanmar, tx, priority, onToggleSaved }: { property: Property; saved: boolean; isMyanmar: boolean; tx: (english: string, myanmar: string) => string; priority: boolean; onToggleSaved: (property: Property) => void }) {
+function HomePropertyCard({ property, saved, isMyanmar, tx, priority, onToggleSaved }: { property: Property; saved: boolean; isMyanmar: boolean; tx: (english: string, myanmar: string) => string; priority: boolean; onToggleSaved?: (property: Property) => void }) {
   return (
     <article className="group overflow-hidden rounded-[20px] border border-[#D7E3F2] bg-[#FAF8FF] shadow-[0_8px_24px_rgba(18,59,115,.08)] transition-[transform,box-shadow] hover:-translate-y-0.5 hover:shadow-[0_14px_34px_rgba(18,59,115,.13)] active:scale-[.99]">
       <div className="relative aspect-[4/5] overflow-hidden bg-[#DCEBFF] sm:aspect-[16/11]">
@@ -216,7 +216,7 @@ function HomePropertyCard({ property, saved, isMyanmar, tx, priority, onToggleSa
         <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,12,24,.05)_20%,rgba(4,12,24,.9)_100%)]" />
 
         <span className="absolute left-2.5 top-2.5 z-20 inline-flex size-8 items-center justify-center gap-1.5 rounded-full bg-[#FAF8FF]/92 text-[11px] font-semibold text-[#123B73] shadow-sm backdrop-blur-md min-[380px]:h-8 min-[380px]:w-auto min-[380px]:px-2.5 sm:left-3 sm:top-3 sm:px-3 sm:text-[12px]"><ShieldCheck className="size-3.5 shrink-0" /><span className="hidden min-[380px]:inline">{tx("Verified", "စိစစ်ပြီး")}</span></span>
-        <button type="button" onClick={() => onToggleSaved(property)} aria-label={saved ? tx(`Remove ${property.title} from saved homes`, `${property.title} ကို သိမ်းထားမှုမှဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)} aria-pressed={saved} className={cn("absolute right-2 top-2 z-20 grid size-11 place-items-center rounded-full bg-[#FAF8FF]/90 shadow-sm backdrop-blur-md transition-transform active:scale-95 sm:right-3 sm:top-3", saved ? "text-[#BA1A1A]" : "text-[#123B73]")}><Heart className={cn("size-[19px]", saved && "fill-current")} /></button>
+        {onToggleSaved && <button type="button" onClick={() => onToggleSaved(property)} aria-label={saved ? tx(`Remove ${property.title} from saved homes`, `${property.title} ကို သိမ်းထားမှုမှဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)} aria-pressed={saved} className={cn("absolute right-2 top-2 z-20 grid size-11 place-items-center rounded-full bg-[#FAF8FF]/90 shadow-sm backdrop-blur-md transition-transform active:scale-95 sm:right-3 sm:top-3", saved ? "text-[#BA1A1A]" : "text-[#123B73]")}><Heart className={cn("size-[19px]", saved && "fill-current")} /></button>}
 
         <div className="absolute inset-x-3 bottom-3 z-20 text-white sm:inset-x-4 sm:bottom-4">
           <div className="flex items-center justify-between gap-2">

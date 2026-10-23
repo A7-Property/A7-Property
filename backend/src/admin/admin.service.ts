@@ -29,33 +29,48 @@ export class AdminService {
   ) {}
 
   async overview() {
-    const [users, listers, seekers, activeUsers, properties, published, pendingReview, verified, inquiries, viewings, newInquiries, requestedViewings, pendingReports] =
+    const now = new Date();
+    const staleReviewBefore = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const [users, listers, seekers, activeUsers, lockedUsers, properties, published, pendingReview, staleReview, verified, inquiries, viewings, newInquiries, requestedViewings, pendingReports, pendingVerificationDocuments] =
       await this.prisma.$transaction([
         this.prisma.user.count(),
         this.prisma.user.count({ where: { role: UserRole.LISTER } }),
         this.prisma.user.count({ where: { role: UserRole.SEEKER } }),
         this.prisma.user.count({ where: { isActive: true } }),
+        this.prisma.user.count({ where: { lockedUntil: { gt: now } } }),
         this.prisma.property.count(),
         this.prisma.property.count({ where: { status: PropertyStatus.PUBLISHED } }),
         this.prisma.property.count({ where: { verificationStatus: VerificationStatus.PENDING } }),
+        this.prisma.property.count({ where: { verificationStatus: VerificationStatus.PENDING, updatedAt: { lt: staleReviewBefore } } }),
         this.prisma.property.count({ where: { verificationStatus: VerificationStatus.VERIFIED } }),
         this.prisma.inquiry.count(),
         this.prisma.viewing.count(),
         this.prisma.inquiry.count({ where: { status: "NEW" } }),
         this.prisma.viewing.count({ where: { status: "REQUESTED" } }),
         this.prisma.propertyReport.count({ where: { status: PropertyReportStatus.PENDING } }),
+        this.prisma.verificationDocument.count({ where: { status: VerificationStatus.PENDING } }),
       ]);
     return {
-      users: { total: users, active: activeUsers, listers, seekers },
-      properties: { total: properties, published, pendingReview, verified },
+      users: { total: users, active: activeUsers, locked: lockedUsers, listers, seekers },
+      properties: { total: properties, published, pendingReview, staleReview, verified },
       inquiries: { total: inquiries, new: newInquiries },
       viewings: { total: viewings, requested: requestedViewings },
       reports: { pending: pendingReports },
+      verificationDocuments: { pending: pendingVerificationDocuments },
     };
   }
 
   async propertyReports(query: AdminPropertyReportQueryDto) {
-    const where = query.status ? { status: query.status } : {};
+    const where: Prisma.PropertyReportWhereInput = {
+      ...(query.status && { status: query.status }),
+      ...(query.search && { OR: [
+        { details: { contains: query.search, mode: "insensitive" } },
+        { property: { title: { contains: query.search, mode: "insensitive" } } },
+        { reporter: { email: { contains: query.search, mode: "insensitive" } } },
+        { reporter: { firstName: { contains: query.search, mode: "insensitive" } } },
+        { reporter: { lastName: { contains: query.search, mode: "insensitive" } } },
+      ] }),
+    };
     const [total, records] = await this.prisma.$transaction([
       this.prisma.propertyReport.count({ where }),
       this.prisma.propertyReport.findMany({
@@ -237,6 +252,11 @@ export class AdminService {
       ...(query.action && { action: query.action }),
       ...(query.actorId && { actorId: query.actorId }),
       ...(query.targetId && { targetId: query.targetId }),
+      ...(query.search && { OR: [
+        { targetId: { contains: query.search, mode: "insensitive" } },
+        { targetType: { contains: query.search, mode: "insensitive" } },
+        { actor: { email: { contains: query.search, mode: "insensitive" } } },
+      ] }),
     };
     const [total, records] = await this.prisma.$transaction([
       this.prisma.auditLog.count({ where }),
@@ -280,10 +300,20 @@ export class AdminService {
     if (!doc) throw new NotFoundException("Document not found");
     if (doc.status === input.status) throw new BadRequestException("Status is already set to that value");
 
-    return this.prisma.verificationDocument.update({
+    const updated = await this.prisma.verificationDocument.update({
       where: { id },
       data: { status: input.status, rejectionNote: input.rejectionNote },
       include: { user: { select: adminUserSelect } }
     });
+    await this.audit.record({
+      action: AuditAction.PROPERTY_VERIFICATION_CHANGED,
+      actorId: adminId,
+      actorRole: UserRole.ADMIN,
+      targetType: "VerificationDocument",
+      targetId: id,
+      metadata: { userId: doc.userId, from: doc.status, to: input.status, note: input.rejectionNote ?? null },
+      request,
+    });
+    return updated;
   }
 }

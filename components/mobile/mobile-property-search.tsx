@@ -104,7 +104,7 @@ function MobilePropertySearch({ properties }: { properties: Property[] }) {
   const [view, setView] = useState<"list" | "map">(initialView === "map" ? "map" : "list");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterFocus, setFilterFocus] = useState<FilterFocus>("all");
-  const { savedIds: saved, toggleSaved } = useSavedHomes();
+  const { savedIds: saved, toggleSaved, canOfferSave } = useSavedHomes();
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [visibleCount, setVisibleCount] = useState(12);
@@ -423,7 +423,7 @@ function MobilePropertySearch({ properties }: { properties: Property[] }) {
         onLocationSelect={(value) => { setLocation(value); setQuery(value === "All Myanmar" ? "" : value); setBrowseAll(true); resetResultWindow(); }}
         onBrowseAll={() => { setBrowseAll(true); resetResultWindow(); }}
         onOpenFilters={() => openFilters("all")}
-        onToggleSaved={handleToggleSaved}
+        onToggleSaved={canOfferSave ? handleToggleSaved : undefined}
         onOpenProperty={rememberJourneyState}
         reduceMotion={Boolean(reduceMotion)}
         filterSheet={
@@ -557,19 +557,19 @@ function MobilePropertySearch({ properties }: { properties: Property[] }) {
               <div ref={carouselRef} onScroll={handleCarouselScroll} className="hide-scrollbar absolute inset-x-0 bottom-0 z-[600] flex snap-x snap-mandatory gap-3 overflow-x-auto px-3 pb-3 lg:hidden">
                 {results.slice(0, 24).map((property) => (
                   <div key={property.id} data-property-id={property.id} onClick={() => setSelectedId(property.id)} className="w-[calc(100vw-40px)] max-w-[350px] shrink-0 snap-center">
-                    <MobilePropertyCard property={property} variant="compact" saved={saved.includes(property.id)} onToggleSaved={handleToggleSaved} onOpen={() => rememberJourneyState(property.id)} className={cn("w-full min-w-0 transition-[border-color,box-shadow] duration-200", selectedId === property.id && "border-[#123B73] ring-2 ring-[#123B73]/15")} />
+                    <MobilePropertyCard property={property} variant="compact" saved={saved.includes(property.id)} onToggleSaved={canOfferSave ? handleToggleSaved : undefined} onOpen={() => rememberJourneyState(property.id)} className={cn("w-full min-w-0 transition-[border-color,box-shadow] duration-200", selectedId === property.id && "border-[#123B73] ring-2 ring-[#123B73]/15")} />
                   </div>
                 ))}
               </div>
               <div className="mt-5 hidden gap-4 lg:grid lg:grid-cols-2 xl:grid-cols-3">
-                {results.slice(0, 6).map((property) => <div key={property.id} data-search-property-id={property.id}><MobilePropertyCard property={property} saved={saved.includes(property.id)} onToggleSaved={handleToggleSaved} onOpen={() => rememberJourneyState(property.id)} /></div>)}
+                {results.slice(0, 6).map((property) => <div key={property.id} data-search-property-id={property.id}><MobilePropertyCard property={property} saved={saved.includes(property.id)} onToggleSaved={canOfferSave ? handleToggleSaved : undefined} onOpen={() => rememberJourneyState(property.id)} /></div>)}
               </div>
             </div>
           </div>
         ) : results.length ? (
           <>
             <div className="mt-5 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-              {results.slice(0, visibleCount).map((property, index) => <motion.div key={property.id} data-search-property-id={property.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.38, delay: reduceMotion ? 0 : Math.min(index, 7) * 0.045, ease: [0.22, 1, 0.36, 1] }}><MobileSearchCard variant="compact" property={property} saved={saved.includes(property.id)} onToggleSaved={handleToggleSaved} onOpen={() => rememberJourneyState(property.id)} priority={index < 2 || property.images[0] === results[0]?.images[0]} compared={comparisonIds.includes(property.id)} compareDisabled={!comparisonIds.includes(property.id) && comparisonIds.length >= maxComparisonHomes} onToggleCompare={toggleCompared} /></motion.div>)}
+              {results.slice(0, visibleCount).map((property, index) => <motion.div key={property.id} data-search-property-id={property.id} initial={reduceMotion ? false : { opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.38, delay: reduceMotion ? 0 : Math.min(index, 7) * 0.045, ease: [0.22, 1, 0.36, 1] }}><MobileSearchCard variant="compact" property={property} saved={saved.includes(property.id)} onToggleSaved={canOfferSave ? handleToggleSaved : undefined} onOpen={() => rememberJourneyState(property.id)} priority={index < 2 || property.images[0] === results[0]?.images[0]} compared={comparisonIds.includes(property.id)} compareDisabled={!comparisonIds.includes(property.id) && comparisonIds.length >= maxComparisonHomes} onToggleCompare={toggleCompared} /></motion.div>)}
             </div>
             {visibleCount < results.length && (
               <div className="mt-6 rounded-[18px] border border-[#D0DEF0] bg-[#F8FBFF] p-4 shadow-[0_8px_24px_rgba(26,52,88,.06)]">
@@ -600,7 +600,7 @@ function MobilePropertySearch({ properties }: { properties: Property[] }) {
             <div className="hide-scrollbar -mx-4 mt-5 flex snap-x gap-3 overflow-x-auto px-4 pb-3 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
               {recentlyViewed.map((property) => (
                 <div key={property.id} className="w-[88vw] max-w-[475px] shrink-0 snap-start sm:w-auto">
-                  <MobileSearchCard variant="compact" property={property} saved={saved.includes(property.id)} onToggleSaved={handleToggleSaved} onOpen={() => rememberJourneyState(property.id)} priority={results.some((result) => result.images[0] === property.images[0])} compared={comparisonIds.includes(property.id)} compareDisabled={!comparisonIds.includes(property.id) && comparisonIds.length >= maxComparisonHomes} onToggleCompare={toggleCompared} />
+                  <MobileSearchCard variant="compact" property={property} saved={saved.includes(property.id)} onToggleSaved={canOfferSave ? handleToggleSaved : undefined} onOpen={() => rememberJourneyState(property.id)} priority={results.some((result) => result.images[0] === property.images[0])} compared={comparisonIds.includes(property.id)} compareDisabled={!comparisonIds.includes(property.id) && comparisonIds.length >= maxComparisonHomes} onToggleCompare={toggleCompared} />
                 </div>
               ))}
             </div>
@@ -637,7 +637,7 @@ interface ExploreLandingProps {
   onLocationSelect: (location: string) => void;
   onBrowseAll: () => void;
   onOpenFilters: () => void;
-  onToggleSaved: (property: Property) => void;
+  onToggleSaved?: (property: Property) => void;
   onOpenProperty: (propertyId: string) => void;
   reduceMotion: boolean;
   filterSheet: React.ReactNode;
@@ -717,7 +717,7 @@ function ExploreLocationCard({ href, image, title, detail, priority, onClick }: 
   );
 }
 
-function ExploreRecommendationCard({ property, saved, isMyanmar, tx, priority, onToggleSaved, onOpen }: { property: Property; saved: boolean; isMyanmar: boolean; tx: ExploreLandingProps["tx"]; priority: boolean; onToggleSaved: (property: Property) => void; onOpen: (propertyId: string) => void }) {
+function ExploreRecommendationCard({ property, saved, isMyanmar, tx, priority, onToggleSaved, onOpen }: { property: Property; saved: boolean; isMyanmar: boolean; tx: ExploreLandingProps["tx"]; priority: boolean; onToggleSaved?: (property: Property) => void; onOpen: (propertyId: string) => void }) {
   const price = formatPropertyPrice(property, isMyanmar ? "my" : "en");
   const secondaryPrice = formatPropertyPrice(property, isMyanmar ? "en" : "my");
 
@@ -727,7 +727,7 @@ function ExploreRecommendationCard({ property, saved, isMyanmar, tx, priority, o
         <Link href={`/properties/${property.id}`} onClick={() => onOpen(property.id)} className="absolute inset-0 z-10" aria-label={tx(`View ${property.title}`, `${property.title} ကိုကြည့်ရန်`)} />
         <ProgressiveImage src={property.images[0]} alt={property.title} fill priority={priority} sizes="(max-width: 800px) calc(100vw - 32px), 712px" className="object-cover transition-transform duration-700 group-hover:scale-[1.03]" />
         <ListingStatusBadge status={property.verification_status} tx={tx} />
-        <button type="button" onClick={() => onToggleSaved(property)} aria-label={saved ? tx(`Remove ${property.title} from saved homes`, `${property.title} ကို သိမ်းထားမှုမှဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)} aria-pressed={saved} className={cn("absolute right-3 top-3 z-20 grid size-11 place-items-center rounded-full bg-white/85 shadow-sm backdrop-blur-md transition-transform active:scale-95", saved ? "text-[#BA1A1A]" : "text-[#424655]")}><Heart className={cn("size-5", saved && "fill-current")} /></button>
+        {onToggleSaved && <button type="button" onClick={() => onToggleSaved(property)} aria-label={saved ? tx(`Remove ${property.title} from saved homes`, `${property.title} ကို သိမ်းထားမှုမှဖယ်ရန်`) : tx(`Save ${property.title}`, `${property.title} ကို သိမ်းရန်`)} aria-pressed={saved} className={cn("absolute right-3 top-3 z-20 grid size-11 place-items-center rounded-full bg-white/85 shadow-sm backdrop-blur-md transition-transform active:scale-95", saved ? "text-[#BA1A1A]" : "text-[#424655]")}><Heart className={cn("size-5", saved && "fill-current")} /></button>}
         {property.images.length > 1 && <span className="absolute inset-x-0 bottom-3 z-20 flex justify-center gap-1.5" aria-hidden="true">{property.images.slice(0, 3).map((_, index) => <i key={index} className={cn("size-2 rounded-full shadow-sm", index === 0 ? "bg-white" : "bg-white/50")} />)}</span>}
       </div>
       <div className="p-4 sm:p-5">

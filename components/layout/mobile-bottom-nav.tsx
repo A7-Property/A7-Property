@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { useLanguage } from "@/components/i18n/language-provider";
+import { useAuth } from "@/components/auth/auth-provider";
 import { a7Motion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -20,6 +21,7 @@ const items = [
 function MobileBottomNav() {
   const pathname = usePathname();
   const { isMyanmar, tx } = useLanguage();
+  const { user } = useAuth();
   const reduceMotion = useReducedMotion();
   if (pathname.startsWith("/sign-in") || pathname.startsWith("/owner") || pathname.startsWith("/agent") || pathname.startsWith("/properties") || pathname.startsWith("/dashboard")) return null;
   const activeId = pathname === "/"
@@ -34,12 +36,14 @@ function MobileBottomNav() {
             ? "profile"
             : "home";
 
+  const visibleItems = user?.accountType === "lister" ? items.filter((item) => item.id !== "saved") : items;
+
   return (
     <nav
-      className="a7-mobile-nav-shell fixed inset-x-2.5 z-[80] mx-auto grid max-w-[520px] grid-cols-5 px-2.5 py-2 lg:hidden"
+      className={cn("a7-mobile-nav-shell fixed inset-x-2.5 z-[80] mx-auto grid max-w-[520px] px-2.5 py-2 lg:hidden", visibleItems.length === 4 ? "grid-cols-4" : "grid-cols-5")}
       aria-label={tx("Primary mobile navigation", "မိုဘိုင်းအဓိက လမ်းညွှန်")}
     >
-      {items.map((item) => {
+      {visibleItems.map((item) => {
         const Icon = item.icon;
         const active = item.id === activeId;
         return (

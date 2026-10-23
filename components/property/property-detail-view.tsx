@@ -27,7 +27,7 @@ function PropertyDetailView({ property }: { property: Property }) {
   const { user, status } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const { isSaved, toggleSaved } = useSavedHomes();
+  const { isSaved, toggleSaved, canOfferSave } = useSavedHomes();
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const [inquiryMode, setInquiryMode] = useState<InquiryMode>("schedule");
   const [reportOpen, setReportOpen] = useState(false);
@@ -40,6 +40,7 @@ function PropertyDetailView({ property }: { property: Property }) {
   }, [property.id]);
 
   const favorite = isSaved(property.id);
+  const isLister = status === "authenticated" && user?.accountType === "lister";
 
   function toggleFavorite() {
     void toggleSaved(property).then(({ applied }) => {
@@ -52,6 +53,14 @@ function PropertyDetailView({ property }: { property: Property }) {
     if (status !== "authenticated" || !user) {
       window.sessionStorage.setItem("a7-auth-return-to", `/properties/${property.id}`);
       router.push("/sign-in");
+      return;
+    }
+    if (user.accountType !== "seeker") {
+      toast({
+        tone: "info",
+        title: tx("This action is for seeker accounts", "ဤလုပ်ဆောင်ချက်သည် အိမ်ရှာသူအကောင့်အတွက်သာ"),
+        description: tx("Lister accounts can manage and reply to leads from their dashboard.", "စာရင်းတင်သူအကောင့်များသည် မိမိ dashboard မှ စိတ်ဝင်စားသူများကို စီမံပြီး အကြောင်းပြန်နိုင်ပါသည်။"),
+      });
       return;
     }
     setInquiryMode(mode);
@@ -101,7 +110,7 @@ function PropertyDetailView({ property }: { property: Property }) {
       </header>
 
       <main className="mx-auto w-full max-w-[760px]">
-        <PropertyGallery images={property.images} title={property.title} verified={property.verification_status === "verified"} favorite={favorite} onToggleFavorite={toggleFavorite} />
+        <PropertyGallery images={property.images} title={property.title} verified={property.verification_status === "verified"} favorite={favorite} onToggleFavorite={canOfferSave ? toggleFavorite : undefined} />
 
         <div className="px-4 pt-4 sm:px-6 sm:pt-5">
           <section className="flex items-start gap-3">
@@ -127,19 +136,24 @@ function PropertyDetailView({ property }: { property: Property }) {
           <OverviewSection property={property} tx={tx} />
           <AmenitiesGrid property={property} tx={tx} />
           <LocationCard property={property} tx={tx} />
-          <ListedByCard property={property} tx={tx} onContact={() => openInquiry("contact")} onReport={reportListing} />
+          <ListedByCard property={property} tx={tx} onContact={isLister ? undefined : () => openInquiry("contact")} onReport={reportListing} />
         </div>
       </main>
 
       <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-[#E1E2EE] bg-[#FAF8FF]/92 px-4 pb-[max(.75rem,env(safe-area-inset-bottom))] pt-2.5 shadow-[0_-4px_20px_rgba(0,0,0,.06)] backdrop-blur-xl sm:inset-x-6 sm:bottom-4 sm:mx-auto sm:max-w-[728px] sm:rounded-2xl sm:border sm:pb-3">
-        <div className="mx-auto grid max-w-[728px] grid-cols-2 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+        {isLister ? (
+          <div className="mx-auto flex min-h-12 max-w-[728px] items-center justify-between gap-3">
+            <p className="text-[12px] leading-5 text-[#424655]">{tx("Lister accounts can browse, but cannot save homes, message a listing, or request a viewing.", "စာရင်းတင်သူအကောင့်သည် အိမ်များကို ကြည့်နိုင်သော်လည်း သိမ်းခြင်း၊ စာပို့ခြင်း သို့မဟုတ် အိမ်ကြည့်ရန် တောင်းဆိုခြင်း မပြုနိုင်ပါ။")}</p>
+            <a href="/owner" className="inline-flex h-11 shrink-0 items-center rounded-lg bg-[#0053D2] px-4 text-[12px] font-semibold text-white">{tx("Lister dashboard", "စာရင်းတင်သူ dashboard")}</a>
+          </div>
+        ) : <div className="mx-auto grid max-w-[728px] grid-cols-2 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
           <div className="hidden min-w-0 sm:block"><span className="block text-[11px] text-[#424655]">{property.purpose === "rent" ? tx("Monthly rent", "လစဉ်ငှားရမ်းခ") : tx("Total price", "စုစုပေါင်းဈေးနှုန်း")}</span><strong className="mt-0.5 block truncate text-[20px] font-bold tracking-[-.035em] text-[#0053D2]">{price}</strong></div>
           <button type="button" onClick={() => openInquiry("contact")} className="inline-flex h-12 items-center justify-center rounded-lg border border-[#0053D2]/22 bg-white px-4 text-[12px] font-semibold text-[#0053D2] shadow-sm transition-[transform,box-shadow] active:scale-[.98]">{tx("Message", "စာပို့ရန်")}</button>
           <button type="button" onClick={() => openInquiry("schedule")} className="inline-flex h-12 items-center justify-center rounded-lg bg-[#0053D2] px-4 text-[12px] font-semibold leading-none text-white shadow-sm transition-[transform,box-shadow] active:scale-[.98]"><span className="relative top-px inline-flex items-center leading-none">{tx("Request viewing", "အိမ်ကြည့်ရန်")}</span></button>
-        </div>
+        </div>}
       </div>
 
-      <InquirySheet open={inquiryOpen} onOpenChange={setInquiryOpen} mode={inquiryMode} property={property} />
+      {!isLister && <InquirySheet open={inquiryOpen} onOpenChange={setInquiryOpen} mode={inquiryMode} property={property} />}
       <ReportListingModal open={reportOpen} onOpenChange={setReportOpen} property={property} tx={tx} />
     </div>
   );
@@ -196,7 +210,7 @@ function OverviewSection({ property, tx }: { property: Property; tx: (english: s
   );
 }
 
-function ListedByCard({ property, tx, onContact, onReport }: { property: Property; tx: (english: string, myanmar: string) => string; onContact: () => void; onReport: () => void }) {
+function ListedByCard({ property, tx, onContact, onReport }: { property: Property; tx: (english: string, myanmar: string) => string; onContact?: () => void; onReport: () => void }) {
   const initials = property.owner.name.split(" ").map((part) => part[0]).slice(0, 2).join("");
   return (
     <section className="py-7" aria-labelledby="listed-by-title">
@@ -207,7 +221,7 @@ function ListedByCard({ property, tx, onContact, onReport }: { property: Propert
       <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#F2F3FF] p-4">
         <Avatar initials={initials} className="size-14 shrink-0 bg-[#DCE2F3] text-[15px] font-semibold text-[#0053D2]" />
         <div className="min-w-0 flex-1"><strong className="block truncate !text-[16px] font-semibold">{property.owner.name}</strong><span className="mt-1 inline-flex items-start justify-center gap-1 !text-[12px] text-[#424655]">{property.rating === null ? null : <><Star className="size-3.5 fill-[#0053D2] text-[#0053D2]" />{property.rating.toFixed(1)} · </>}{tx(contactVerificationLabel(property.owner), property.owner.phone_verified ? (property.owner.type === "agent" ? "ဖုန်းစိစစ်ပြီးအကျိုးဆောင်" : "ဖုန်းစိစစ်ပြီးအိမ်ရှင်") : "ဖုန်းမစိစစ်ရသေး")}</span></div>
-        <button type="button" onClick={onContact} className="grid size-11 shrink-0 place-items-center rounded-full bg-[#E6E7F4] text-[#0053D2] shadow-sm transition-transform active:scale-95" aria-label={tx(`Contact ${property.owner.name}`, `${property.owner.name} ကိုဆက်သွယ်ရန်`)}><Phone className="size-[18px]" /></button>
+        {onContact && <button type="button" onClick={onContact} className="grid size-11 shrink-0 place-items-center rounded-full bg-[#E6E7F4] text-[#0053D2] shadow-sm transition-transform active:scale-95" aria-label={tx(`Contact ${property.owner.name}`, `${property.owner.name} ကိုဆက်သွယ်ရန်`)}><Phone className="size-[18px]" /></button>}
       </div>
       <button type="button" onClick={onReport} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-[12px] font-semibold text-[#9E1B1B] hover:bg-[#FFF1F0]"><Flag className="size-4" />{tx("Report a safety concern", "လုံခြုံရေးစိုးရိမ်ချက် တင်ပြရန်")}</button>
     </section>
