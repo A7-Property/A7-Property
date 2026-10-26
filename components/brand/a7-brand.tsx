@@ -14,13 +14,13 @@ function A7Brand({ compact = false, inverted = false, showMyanmar = false, class
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <span className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-[13px] border border-[#0057D9]/10 bg-white shadow-[0_5px_16px_rgba(0, 87, 217,.12)]">
         <Image
-          src="/images/brand/a7-property-logo.jpg"
+          src="/images/brand/a7-property-logo.png"
           alt=""
           aria-hidden="true"
           fill
           loading="eager"
           sizes="40px"
-          className="scale-[2.55] object-contain"
+          className="scale-[1.18] object-contain"
         />
       </span>
       {!compact && (

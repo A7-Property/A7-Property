@@ -83,3 +83,23 @@ test("web views preserve mobile/native screens and do not import server listing 
   assert.match(card, /ProgressiveImage/);
   assert.match(shell, /href="\/owner\?create=1"/);
 });
+
+test("lister discovery filters immediately by published-home location or lister name", async () => {
+  const source = ts.transpileModule(await read("lib/lister-discovery.ts"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
+  const listerHelpers = {};
+  vm.runInNewContext(source, { exports: listerHelpers });
+  const listers = [
+    { id: "one", name: "Aye Aye", type: "agent", listings: [{ id: "yangon", title: "Yangon home", location: "Bahan, Yangon" }] },
+    { id: "two", name: "Ko Min", type: "owner", listings: [{ id: "mandalay", title: "Mandalay home", location: "Chanayethazan, Mandalay" }] },
+  ];
+
+  assert.deepEqual(Array.from(listerHelpers.filterPublicListers(listers, "location", " yangon "), (item) => item.id), ["one"]);
+  assert.deepEqual(Array.from(listerHelpers.filterPublicListers(listers, "name", "min"), (item) => item.id), ["two"]);
+  assert.equal(listerHelpers.filterPublicListers([], "location", "Yangon").length, 0);
+});
+
+test("lister search stays interactive when no published homes exist", async () => {
+  const view = await read("components/web/lister-discovery.tsx");
+  assert.doesNotMatch(view, /disabled=!\{hasPublishedListers\}/);
+  assert.match(view, /placeholder=\{mode === "location"/);
+});

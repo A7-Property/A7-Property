@@ -21,7 +21,7 @@ export const metadata: Metadata = (() => {
     metadataBase: baseUrl,
     title,
     description,
-    icons: { icon: "/images/brand/a7-property-logo.jpg", shortcut: "/images/brand/a7-property-logo.jpg" },
+    icons: { icon: "/images/brand/a7-property-logo.png", shortcut: "/images/brand/a7-property-logo.png" },
     openGraph: {
       type: "website",
       title,

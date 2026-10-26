@@ -52,7 +52,7 @@ function MobileAppHeader({
     >
       <Link href="/" className="flex min-h-11 min-w-0 shrink items-center gap-2 sm:gap-3" aria-label={tx("A7 Property home", "A7 Property ပင်မစာမျက်နှာ")}>
         <span className="relative size-9 shrink-0 overflow-hidden rounded-full bg-white shadow-[0_2px_8px_rgba(16,24,40,.12)] sm:size-11">
-          <Image src="/images/brand/a7-property-logo.jpg" alt="" fill loading="eager" sizes="44px" className="scale-[2.55] object-contain" />
+          <Image src="/images/brand/a7-property-logo.png" alt="" fill loading="eager" sizes="44px" className="scale-[1.18] object-contain" />
         </span>
         <span className="hidden truncate text-[19px] font-semibold tracking-[-.045em] text-[#0053D2] min-[360px]:inline sm:text-[26px]">A7 Property</span>
       </Link>
