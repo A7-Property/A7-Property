@@ -70,7 +70,7 @@ export function AdminSignInView() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-[13px] font-semibold text-[#101828] mb-1.5">Email address</label>
-              <div className="flex h-[50px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_3px_rgba(18,59,115,.12)]">
+              <div className="flex h-[50px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 a7-field-focus">
                 <Mail className="size-5 text-[#7B8798]" />
                 <input
                   type="email"
@@ -85,7 +85,7 @@ export function AdminSignInView() {
 
             <div>
               <label className="block text-[13px] font-semibold text-[#101828] mb-1.5">Password</label>
-              <div className="flex h-[50px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_3px_rgba(18,59,115,.12)]">
+              <div className="flex h-[50px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 a7-field-focus">
                 <LockKeyhole className="size-5 text-[#7B8798]" />
                 <input
                   type="password"

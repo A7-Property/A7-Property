@@ -219,6 +219,8 @@ export function useConversations(): ConversationsState {
         title: tx("Your reply was not sent", "သင့်အကြောင်းပြန်ချက် မပေးပို့နိုင်ပါ"),
         description: error instanceof ApiError && error.needsEmailVerification
           ? tx("Confirm your email address first, then try again.", "သင့်အီးမေးလ်လိပ်စာကို အရင်အတည်ပြုပြီးမှ ထပ်မံကြိုးစားပါ။")
+          : error instanceof TypeError
+            ? tx("Cannot reach the server. It may be restarting or offline. Your reply is still here; try again when the connection returns.", "Server ကို ချိတ်ဆက်၍မရပါ။ ပြန်လည်စတင်နေခြင်း သို့မဟုတ် ပိတ်နေခြင်း ဖြစ်နိုင်ပါသည်။ ပြန်စာ မပျောက်ပါ။ ချိတ်ဆက်မှုပြန်ရပါက ထပ်ပို့ပါ။")
           : tx("Check your connection and try again.", "အင်တာနက်ချိတ်ဆက်မှုကို စစ်ပြီး ထပ်မံကြိုးစားပါ။"),
       });
       return false;

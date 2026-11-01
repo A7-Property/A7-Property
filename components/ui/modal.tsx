@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { a7Motion } from "@/lib/motion";
@@ -24,6 +24,7 @@ function Modal({ open, onOpenChange, title, description, children, footer, class
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
+  const dismissFromKeyboard = useEffectEvent(() => onOpenChange(false));
 
   useEffect(() => {
     if (!open) return;
@@ -34,7 +35,7 @@ function Modal({ open, onOpenChange, title, description, children, footer, class
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onOpenChange(false);
+        dismissFromKeyboard();
         return;
       }
       if (event.key !== "Tab" || !dialogRef.current) return;
@@ -61,7 +62,7 @@ function Modal({ open, onOpenChange, title, description, children, footer, class
       window.removeEventListener("keydown", onKeyDown);
       previousFocus?.focus();
     };
-  }, [open, onOpenChange]);
+  }, [open]);
 
   return (
     <AnimatePresence>

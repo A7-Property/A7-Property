@@ -92,7 +92,7 @@ function MessagesExperience({ properties }: { properties: Property[] }) {
               <h1 className="text-[28px] font-bold leading-9 tracking-[-.025em]">{tx("Messages", "စာများ")}</h1>
               <AnimatedAssetIcon src="/icons/a7-messages-3d.png" width={52} height={52} hover="float" className="size-[52px]" imageClassName="drop-shadow-[0_8px_12px_rgba(18,59,115,.2)]" />
             </div>
-            <label className="mt-4 flex h-11 items-center gap-2 rounded-xl bg-[#EAF4FF] px-3 transition-shadow focus-within:shadow-[0_0_0_3px_rgba(0,83,210,.10)]">
+            <label className="mt-4 flex h-11 items-center gap-2 rounded-xl bg-[#EAF4FF] px-3 transition-shadow a7-field-focus">
               <Search className="size-5 shrink-0 text-[#424655]" />
               <span className="sr-only">{tx("Search conversations", "စကားပြောမှုများရှာရန်")}</span>
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tx("Search", "ရှာရန်")} className="h-11 min-w-0 flex-1 bg-transparent py-0 text-[14px] leading-10 text-[#191B24] outline-none placeholder:text-[#727687]" />
@@ -208,7 +208,7 @@ function ConversationThread({ conversation, properties, reply, onReplyChange, on
           </MessageGroup>
         </div>
       </div>
-      <form onSubmit={onSubmit} className="border-t border-[#D0DEF0] bg-[#F8FBFF] p-3 sm:p-4"><div className="flex items-end gap-2 rounded-[14px] border border-[#D0DEF0] bg-[#F8FBFF] p-2 transition-[border-color,box-shadow] focus-within:border-[#123B73] focus-within:shadow-[0_0_0_3px_rgba(18,59,115,.08)]"><textarea data-focus-ring="parent" disabled={sending} value={reply} onChange={(event) => onReplyChange(event.target.value)} rows={1} aria-label={tx("Write a message", "စာရေးရန်")} placeholder={tx("Write a message…", "စာရေးပါ…")} className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] outline-none" /><button type="submit" disabled={!reply.trim() || sending} className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-[#123B73] text-white disabled:opacity-40" aria-label={sending ? tx("Sending message", "စာပို့နေသည်") : tx("Send message", "စာပို့ရန်")}>{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</button></div></form>
+      <form onSubmit={onSubmit} className="border-t border-[#D0DEF0] bg-[#F8FBFF] p-3 sm:p-4"><div className="flex items-end gap-2 rounded-[14px] border border-[#D0DEF0] bg-[#F8FBFF] p-2 transition-[border-color,box-shadow] a7-field-focus"><textarea data-focus-ring="parent" disabled={sending} value={reply} onChange={(event) => onReplyChange(event.target.value)} rows={1} aria-label={tx("Write a message", "စာရေးရန်")} placeholder={tx("Write a message…", "စာရေးပါ…")} className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-2 py-2 text-[11px] outline-none" /><button type="submit" disabled={!reply.trim() || sending} className="grid size-11 shrink-0 place-items-center rounded-[12px] bg-[#123B73] text-white disabled:opacity-40" aria-label={sending ? tx("Sending message", "စာပို့နေသည်") : tx("Send message", "စာပို့ရန်")}>{sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}</button></div></form>
     </div>
   );
 }

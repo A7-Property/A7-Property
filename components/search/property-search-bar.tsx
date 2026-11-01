@@ -49,7 +49,7 @@ function PropertySearchBar({
 
   return (
     <div className={cn("w-full space-y-2.5", className)}>
-      <form onSubmit={submit} role="search" className="flex min-h-[60px] items-center rounded-full border border-[#DDE4EE] bg-white p-1.5 shadow-[0_10px_28px_rgba(24,48,86,.07)] transition-[border-color,box-shadow] duration-[var(--duration-base)] focus-within:border-[#9DBCE8] focus-within:shadow-[0_0_0_3px_rgba(18,59,115,.08),0_12px_30px_rgba(16,24,40,.08)]">
+      <form onSubmit={submit} role="search" className="flex min-h-[60px] items-center rounded-full border border-[#DDE4EE] bg-white p-1.5 shadow-[0_10px_28px_rgba(24,48,86,.07)] transition-[border-color,box-shadow] duration-[var(--duration-base)] a7-field-focus">
         <button type="submit" className="grid size-11 shrink-0 place-items-center rounded-full text-[#243A60] transition-colors hover:bg-[#F2F6FC] hover:text-a7-blue" aria-label={searchLabel}>
           <Search className="size-[21px]" />
         </button>

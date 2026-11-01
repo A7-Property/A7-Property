@@ -1,4 +1,4 @@
-import { Controller, Get, Header, Post, Query, StreamableFile, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Controller, Get, Header, Post, Query, StreamableFile, UploadedFile, UseGuards, UseInterceptors } from "@nestjs/common";
 import { IsString, MaxLength, MinLength } from "class-validator";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiConsumes, ApiTags } from "@nestjs/swagger";
@@ -6,6 +6,7 @@ import { Throttle } from "@nestjs/throttler";
 import { AuthIdentity, CurrentUser, Roles } from "../common/auth";
 import { UploadKind, UserRole } from "../generated/prisma/enums";
 import { UploadsService } from "./uploads.service";
+import { PropertyImageThrottlerGuard } from "./property-image-throttler.guard";
 
 class DocumentQuery {
   @IsString() @MinLength(1) @MaxLength(500) url!: string;
@@ -26,7 +27,9 @@ export class UploadsController {
   }
 
   @Roles(UserRole.LISTER)
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  // Broad IP protection before authentication; the route guard applies the account quota.
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @UseGuards(PropertyImageThrottlerGuard)
   @Post("property-image")
   @ApiConsumes("multipart/form-data")
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: 10 * 1024 * 1024, files: 1, fields: 0 } }))

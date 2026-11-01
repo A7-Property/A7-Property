@@ -114,7 +114,7 @@ function PersistentSearchBar({ value, onChange, onSearch }: PersistentSearchBarP
         transition={{ duration: reduceMotion ? 0 : 0.38, ease: [0.22, 1, 0.36, 1] }}
       >
         <div ref={searchRef} className="relative">
-          <label className={`flex items-center gap-3 rounded-2xl border border-[#D5DEE8] bg-white px-4 shadow-[0_8px_24px_rgba(23,43,63,.075)] transition-[height,border-color,box-shadow] duration-200 focus-within:border-[#D4A574] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12),0_12px_32px_rgba(23,43,63,.1)] sm:px-5 ${compact ? "h-[52px]" : "h-16"}`}>
+          <label className={`flex items-center gap-3 rounded-2xl border border-[#D5DEE8] bg-white px-4 shadow-[0_8px_24px_rgba(23,43,63,.075)] transition-[height,border-color,box-shadow] duration-200 a7-field-focus sm:px-5 ${compact ? "h-[52px]" : "h-16"}`}>
             <span className="min-w-0 flex-1">
               <input
                 role="combobox"

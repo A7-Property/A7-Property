@@ -18,13 +18,13 @@ export function WebShell({ children, section = "home", search = false }: { child
   return (
     <div className={`a7-web ${search ? "a7-web-search" : ""}`}>
       <header className="web-header">
+        <Link href="/" className="web-brand" aria-label="A7 Property home"><A7Brand /></Link>
         <nav className="web-header-left" aria-label={tx("Property navigation", "အိမ်ခြံမြေ လမ်းညွှန်")}>
           <Link href="/search?purpose=sale" aria-current={section === "buy" ? "page" : undefined}>{tx("Buy", "ဝယ်ရန်")}</Link>
           <Link href="/search?purpose=rent" aria-current={section === "rent" ? "page" : undefined}>{tx("Rent", "ငှားရန်")}</Link>
           <Link href="/owner?create=1">{tx("List property", "အိမ်စာရင်းတင်ရန်")}</Link>
           <Link href="/listers" aria-current={section === "listers" ? "page" : undefined}>{tx("Find a lister", "အိမ်စာရင်းတင်သူရှာရန်")}</Link>
         </nav>
-        <Link href="/" className="web-brand" aria-label="A7 Property home"><A7Brand /></Link>
         <nav className="web-header-right" aria-label={tx("Account navigation", "အကောင့် လမ်းညွှန်")}>
           {!isLister && <Link href="/saved" className="web-saved-link">{tx("Saved properties", "သိမ်းထားသောအိမ်များ")}</Link>}
           <Link href="/help" className="web-help-link">{tx("Get help", "အကူအညီ")}</Link>
@@ -34,11 +34,11 @@ export function WebShell({ children, section = "home", search = false }: { child
       </header>
       <aside className="web-rail">
         <nav aria-label={tx("Your home journey", "သင့်အိမ်ရှာခရီးစဉ်")}>
-          <Link href="/search?purpose=rent" aria-current={section === "buy" || section === "rent" ? "page" : undefined}><Search /><span>{tx("Search", "ရှာရန်")}</span></Link>
-          <span className="web-rail-unavailable" title={tx("Property updates are not available yet", "အိမ်သတင်းအသစ်များ မရရှိသေးပါ")}><Bell /><span>{tx("Updates", "သတင်းအသစ်")}</span><small>{tx("Soon", "မကြာမီ")}</small></span>
-          {!isLister && <Link href="/saved"><Heart /><span>{tx("Favorites", "အကြိုက်များ")}</span></Link>}
-          {!isLister && <Link href="/saved-searches" aria-current={section === "searches" ? "page" : undefined}><Bookmark /><span>{tx("Plan", "အစီအစဉ်")}</span></Link>}
-          <Link href="/messages"><Inbox /><span>{tx("Inbox", "စာဝင်ပုံး")}</span></Link>
+          <Link href="/search?purpose=rent" aria-current={section === "buy" || section === "rent" ? "page" : undefined}><span className="web-rail-icon"><Search aria-hidden="true" /></span><span>{tx("Search", "ရှာရန်")}</span></Link>
+          <span className="web-rail-unavailable" title={tx("Property updates are not available yet", "အိမ်သတင်းအသစ်များ မရရှိသေးပါ")}><span className="web-rail-icon"><Bell aria-hidden="true" /></span><span>{tx("Updates", "သတင်းအသစ်")}</span><small>{tx("Soon", "မကြာမီ")}</small></span>
+          {!isLister && <Link href="/saved"><span className="web-rail-icon"><Heart aria-hidden="true" /></span><span>{tx("Favorites", "အကြိုက်များ")}</span></Link>}
+          {!isLister && <Link href="/saved-searches" aria-current={section === "searches" ? "page" : undefined}><span className="web-rail-icon"><Bookmark aria-hidden="true" /></span><span>{tx("Plan", "အစီအစဉ်")}</span></Link>}
+          <Link href="/messages"><span className="web-rail-icon"><Inbox aria-hidden="true" /></span><span>{tx("Inbox", "စာဝင်ပုံး")}</span></Link>
         </nav>
       </aside>
       <main className="web-main">{children}</main>

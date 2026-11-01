@@ -1,0 +1,326 @@
+.home {
+  --home-ease: cubic-bezier(.22, 1, .36, 1);
+  padding-top: 20px;
+}
+
+.home :global(.web-home-hero) {
+  display: flex;
+  align-items: center;
+  height: auto;
+  min-height: clamp(500px, 38vw, 620px);
+  margin-inline: 20px;
+  border-radius: 24px;
+  isolation: isolate;
+}
+
+.home :global(.web-home-hero) > img {
+  animation: hero-settle 1800ms var(--home-ease) both;
+}
+
+.home :global(.web-hero-content) {
+  width: min(calc(100% - 112px), 1280px);
+  padding-block: 68px 80px;
+}
+
+.home :global(.web-hero-content) h1 {
+  margin: 0 0 38px;
+  font-size: clamp(56px, 4.5vw, 82px);
+  line-height: 1.08;
+  letter-spacing: -.045em;
+}
+
+.home :global(.web-hero-content) h1 > span {
+  display: block;
+  animation: enter 800ms var(--home-ease) both;
+}
+
+.home :global(.web-hero-content) h1 > span + span {
+  margin-top: 8px;
+  font-size: .8em;
+  font-weight: 500;
+  letter-spacing: -.035em;
+  animation-delay: 100ms;
+}
+
+.searchPanel {
+  width: min(100%, 670px);
+  animation: enter 800ms 180ms var(--home-ease) both;
+}
+
+.home :global(.web-hero-tabs) {
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.home :global(.web-hero-tabs) button {
+  min-width: 90px;
+  min-height: 48px;
+  border-radius: 10px;
+  transition: transform 220ms var(--home-ease), background 220ms, color 220ms;
+}
+
+.home :global(.web-hero-search) {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px;
+  overflow: visible;
+  border-radius: 16px;
+  transition: box-shadow 220ms, transform 220ms var(--home-ease);
+}
+
+.home :global(.web-hero-search):focus-within {
+  outline: 1px solid #98a2b3;
+  outline-offset: 2px;
+}
+
+.home :global(.web-hero-search) input:focus {
+  outline: none;
+}
+
+.home :global(.web-hero-search) input {
+  padding-inline: 16px;
+  border-radius: 8px;
+}
+
+.home :global(.web-hero-search) button {
+  width: 60px;
+  min-height: 60px;
+  flex-shrink: 0;
+  border-radius: 10px;
+}
+
+.home :global(.web-hero-search) svg {
+  transition: transform 240ms var(--home-ease);
+}
+
+.home :global(.web-recommend-intro) {
+  padding-block: 76px;
+  gap: 64px;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.home :global(.web-eyebrow) {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.home :global(.web-eyebrow)::before {
+  content: "";
+  width: 30px;
+  height: 2px;
+  background: currentColor;
+}
+
+.home :global(.web-recommend-intro) h2 {
+  max-width: 540px;
+  margin-block: 18px;
+  font-size: clamp(32px, 2.7vw, 44px);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+.home :global(.web-recommend-art) {
+  position: relative;
+  min-height: 310px;
+  isolation: isolate;
+}
+
+.home :global(.web-recommend-art)::before,
+.home :global(.web-recommend-art)::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  width: 270px;
+  height: 270px;
+  border: 1px solid var(--web-line);
+  border-radius: 50%;
+}
+
+.home :global(.web-recommend-art)::after {
+  width: 320px;
+  height: 320px;
+  border-style: dashed;
+}
+
+.home :global(.web-recommend-art) img {
+  transition: transform 650ms var(--home-ease);
+}
+
+.home :global(.web-recommend-art) > span {
+  position: relative;
+  margin-top: 10px;
+}
+
+.home :global(.web-property-section) {
+  margin-bottom: 48px;
+}
+
+.home :global(.web-section-heading) {
+  margin-bottom: 22px;
+}
+
+.home :global(.web-home-empty) {
+  min-height: 120px;
+  padding: 28px 32px;
+  border-radius: 18px;
+}
+
+.home :global(.web-actions-section) {
+  padding-block: 72px;
+  margin-top: 64px;
+}
+
+.home :global(.web-action-card) {
+  border-radius: 24px;
+  transition: transform 350ms var(--home-ease), box-shadow 350ms;
+}
+
+.home :global(.web-action-card) img {
+  transition: transform 500ms var(--home-ease);
+}
+
+.home :global(.web-location-section) {
+  padding-block: 76px 88px;
+}
+
+.home :global(.web-location-section) h2 {
+  font-size: 34px;
+}
+
+.home :global(.web-location-grid) {
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.home :global(.web-location-grid) > a {
+  height: 280px;
+  border-radius: 20px;
+}
+
+.home :global(.web-location-grid) img {
+  transition: transform 700ms var(--home-ease);
+}
+
+.home :global(.web-location-grid) span {
+  padding: 40px 24px 24px;
+}
+
+.home :global(.web-button),
+.home :global(.web-section-heading) > a svg,
+.home :global(.web-button) svg,
+.home :global(.web-location-grid) svg {
+  transition: transform 250ms var(--home-ease), background 250ms;
+}
+
+.revealed {
+  animation: enter 700ms var(--home-ease) backwards;
+}
+
+.home :global(.web-action-card):nth-child(2).revealed,
+.home :global(.web-location-grid) > a:nth-child(2).revealed {
+  animation-delay: 80ms;
+}
+
+.home :global(.web-action-card):nth-child(3).revealed,
+.home :global(.web-location-grid) > a:nth-child(3).revealed {
+  animation-delay: 160ms;
+}
+
+/* Finish the reveal without retaining a transform, so hover can take over. */
+@keyframes enter {
+  from { opacity: .35; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes hero-settle {
+  from { transform: scale(1.055); }
+  to { transform: none; }
+}
+
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .home :global(.web-hero-tabs) button:hover,
+  .home :global(.web-button):hover {
+    transform: translateY(-2px);
+  }
+
+  .home :global(.web-hero-search):hover {
+    box-shadow: 0 10px 24px #0002;
+  }
+
+  .home :global(.web-hero-search) button:hover svg {
+    transform: scale(1.12) rotate(-8deg);
+  }
+
+  .home :global(.web-recommend-art):hover img {
+    transform: translateY(-10px) rotate(-4deg);
+  }
+
+  .home :global(.web-action-card):hover {
+    transform: translateY(-8px);
+  }
+
+  .home :global(.web-action-card):hover img {
+    transform: translateY(-6px) rotate(-3deg);
+  }
+
+  .home :global(.web-location-grid) > a:hover img {
+    transform: scale(1.06);
+  }
+
+  .home :global(.web-section-heading) > a:hover svg,
+  .home :global(.web-button):hover svg,
+  .home :global(.web-location-grid) > a:hover svg {
+    transform: translateX(4px);
+  }
+}
+
+.home :global(.web-action-card):focus-within {
+  box-shadow: 0 10px 24px #172b3f20;
+}
+
+:global(html[lang=my]) .home :global(.web-hero-content) h1 {
+  font-size: clamp(38px, 3.2vw, 58px);
+  line-height: 1.6;
+  letter-spacing: 0;
+}
+
+:global(html[lang=my]) .home :global(.web-hero-content) h1 > span {
+  letter-spacing: 0;
+}
+
+:global(html[lang=my]) .home :global(.web-recommend-intro) h2 {
+  line-height: 1.8;
+}
+
+@media (max-width: 1279px) {
+  .home :global(.web-hero-content) { width: calc(100% - 80px); }
+  .home :global(.web-recommend-intro) { gap: 36px; }
+  .home :global(.web-location-grid) > a { height: 230px; }
+}
+
+/* Keep the server-rendered desktop shell usable before the mobile view mounts. */
+@media (max-width: 1023px) {
+  .home { padding-top: 12px; }
+  .home :global(.web-home-hero) { margin-inline: 12px; border-radius: 20px; min-height: 440px; }
+  .home :global(.web-hero-content) { width: calc(100% - 40px); padding-block: 48px; }
+  .home :global(.web-hero-content) h1 { font-size: clamp(34px, 6vw, 56px); }
+  .home :global(.web-hero-search) { min-height: 64px; padding: 4px; }
+  .home :global(.web-hero-search) input { padding-inline: 10px; font-size: 16px; }
+  .home :global(.web-hero-search) button { min-height: 52px; width: 44px; }
+  .home :global(.web-recommend-intro) { grid-template-columns: 1fr; padding-block: 48px; }
+  .home :global(.web-action-grid), .home :global(.web-location-grid) { grid-template-columns: 1fr; }
+  .home :global(.web-section-heading) { align-items: flex-start; flex-wrap: wrap; }
+  .home :global(.web-home-property-grid) { grid-template-columns: 1fr; }
+  .home :global(.web-recommend-art)::after { width: 270px; height: 270px; }
+  .home :global(.web-recommend-art)::before { width: 230px; height: 230px; }
+  .home :global(.web-recommend-art) img { max-width: 100%; }
+  :global(html[lang=my]) .home :global(.web-hero-content) h1 { font-size: clamp(26px, 4.5vw, 38px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home *, .home *::before, .home *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}

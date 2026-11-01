@@ -666,7 +666,7 @@ function ExploreLanding({ purpose, searchTab, homes, saved, tx, isMyanmar, onSea
       <motion.main initial={reduceMotion ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: reduceMotion ? 0 : 0.44, ease: [0.22, 1, 0.36, 1] }} className="pt-16">
         <section className="bg-white px-4 pb-5 pt-4 sm:px-6">
           <div className="mx-auto max-w-[760px]">
-            <form onSubmit={(event) => { event.preventDefault(); onSearchSubmit(); }} role="search" className="flex h-14 items-center rounded-full bg-[#E9E7EC] px-4 shadow-sm transition-shadow focus-within:shadow-[0_0_0_3px_rgba(0,83,210,.12)]">
+            <form onSubmit={(event) => { event.preventDefault(); onSearchSubmit(); }} role="search" className="flex h-14 items-center rounded-full bg-[#E9E7EC] px-4 shadow-sm transition-shadow a7-field-focus">
               <Search className="mr-3 size-5 shrink-0 text-[#424655]" />
               <input type="search" autoComplete="off" onChange={(event) => onSearchValueChange(event.target.value)} placeholder={tx("Search township, city or property...", "မြို့နယ်၊ မြို့ သို့မဟုတ် အိမ်ရှာရန်...")} aria-label={tx("Search properties", "အိမ်ခြံမြေရှာရန်")} className="h-11 min-w-0 flex-1 bg-transparent py-0 !text-[14px] leading-[44px] text-[#1B1B1F] outline-none placeholder:text-[#6B7280]" />
               <span className="mx-3 h-6 w-px bg-[#C2C6D8]" aria-hidden="true" />

@@ -38,7 +38,7 @@ async function editor(onSave, upload = async () => ({ id: "new-document", url: "
       if (path.endsWith("api/client")) return { isApiConfigured: () => true, ApiError: class extends Error {} };
       if (path.endsWith("api/uploads")) return { uploadPropertyDocument: upload };
       if (path.endsWith("lib/properties")) return properties;
-      return { Button: button, Sheet: frame, ProgressiveImage: () => null, AnimatedAssetIcon: () => null };
+      return { Button: button, Sheet: frame, ProgressiveImage: () => null, PrivateDocumentPreview: () => null, AnimatedAssetIcon: () => null };
     },
   });
   const property = { id: "owned", title: "Existing owned listing", description: "An existing property with sufficient details for validation.", address: "Existing address", city: "Yangon", township: "Bahan", purpose: "sale", property_type: "house", price: 100, currency: "MMK", bedrooms: 1, bathrooms: 1, area_sqft: 100, floor: null, year_built: null, furniture: null, amenities: [], images: [], documents: [], image_asset_ids: [] };
@@ -114,6 +114,8 @@ test("reply/read and attachment contracts prevent the observed status and docume
   assert.match(sheet, /View Sample Ownership Document/);
   assert.match(sheet, /aria-expanded=\{showOwnershipSample\}/);
   assert.match(sheet, /src=\{doc\.documentUrl\}/);
+  assert.match(sheet, /<PrivateDocumentPreview/);
+  assert.doesNotMatch(sheet, /href=\{doc\.documentUrl\}/);
   assert.match(sheet, /Open ownership document/);
   assert.doesNotMatch(sheet, /application\/pdf/);
 });

@@ -3,15 +3,16 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Search } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/components/i18n/language-provider";
-import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { HeroSlideshow } from "@/components/ui/hero-slideshow";
 import { useSavedHomes, type SavedHomes } from "@/hooks/use-saved-homes";
 import { isApiConfigured } from "@/lib/api/client";
 import type { Property } from "@/lib/properties";
 import { WebShell, WebFooter } from "./web-shell";
 import { WebPropertyCard } from "./web-property-card";
+import styles from "./web-home.module.css";
 
 export interface WebHomeProps { recommended: Property[]; featured: Property[]; recent: Property[] }
 
@@ -21,6 +22,27 @@ export function WebHome({ recommended, featured, recent }: WebHomeProps) {
   const savedHomes = useSavedHomes();
   const [query, setQuery] = useState("");
   const [purpose, setPurpose] = useState<"sale" | "rent">("sale");
+  const homeRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!homeRef.current || !window.IntersectionObserver) return;
+    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    if (motion.matches) return;
+
+    // Content stays visible without JavaScript; each section animates only once.
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add(styles.revealed);
+        observer.unobserve(entry.target);
+      }
+    }, { threshold: 0.12 });
+    homeRef.current.querySelectorAll(
+      ".web-recommend-intro > div, .web-property-section, .web-action-card, .web-location-grid > a",
+    ).forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
   function search(event: FormEvent) {
     event.preventDefault();
     const params = new URLSearchParams({ purpose });
@@ -34,13 +56,16 @@ export function WebHome({ recommended, featured, recent }: WebHomeProps) {
   ];
   return (
     <WebShell>
+      <div ref={homeRef} className={styles.home}>
       <section className="web-home-hero">
-        <ProgressiveImage src="/images/properties/hero-yangon-home.jpg" alt={tx("Tropical home with a garden in Yangon", "ရန်ကုန်ရှိ ဥယျာဉ်ပါအိမ်")} fill preload sizes="(min-width: 1024px) calc(100vw - 80px), 100vw" className="object-cover" />
+        <HeroSlideshow sizes="(min-width: 1024px) calc(100vw - 80px), 100vw" />
         <div className="web-hero-shade" />
         <div className="web-hero-content">
-          <h1>{tx("Find Your Place", "သင့်နေရာကို ရှာပါ")}<br />{tx("with A7 Property", "A7 Property နှင့်အတူ")}</h1>
+          <h1><span>{tx("Find Your Place", "သင့်နေရာကို ရှာပါ")}</span><span>{tx("with A7 Property", "A7 Property နှင့်အတူ")}</span></h1>
+          <div className={styles.searchPanel}>
           <div className="web-hero-tabs" aria-label={tx("Listing type", "စာရင်းအမျိုးအစား")}><button type="button" aria-pressed={purpose === "sale"} onClick={() => setPurpose("sale")}>{tx("Buy", "ဝယ်ရန်")}</button><button type="button" aria-pressed={purpose === "rent"} onClick={() => setPurpose("rent")}>{tx("Rent", "ငှားရန်")}</button></div>
           <form onSubmit={search} className="web-hero-search" role="search"><input aria-label={tx("Search location or property", "နေရာ သို့မဟုတ် အိမ်ရှာရန်")} placeholder={tx("Enter location, city, township, or property name", "နေရာ၊ မြို့၊ မြို့နယ် သို့မဟုတ် အိမ်အမည်ထည့်ပါ")} value={query} onChange={(event) => setQuery(event.target.value)} /><button type="submit" aria-label={tx("Search properties", "အိမ်များရှာရန်")}><Search /></button></form>
+          </div>
         </div>
       </section>
       <section className="web-recommend-intro web-container">
@@ -55,6 +80,7 @@ export function WebHome({ recommended, featured, recent }: WebHomeProps) {
       <section className="web-actions-section"><div className="web-container web-action-grid">{actions.map((action) => <article key={action.href} className="web-action-card"><Image src={action.image} alt="" width={190} height={180} loading="lazy" /><h2>{action.title}</h2><p>{action.description}</p><Link href={action.href} className="web-button web-button-outline">{action.button}</Link></article>)}</div></section>
       <section className="web-location-section web-container"><h2>{tx("Find your corner of Myanmar", "မြန်မာနိုင်ငံတွင် သင့်နေရာကိုရှာပါ")}</h2><p>{tx("Explore the cities and neighborhoods you love.", "သင်နှစ်သက်သော မြို့များနှင့် ရပ်ကွက်များကို လေ့လာပါ။")}</p><div className="web-location-grid">{[{ name: "Yangon", my: "ရန်ကုန်", image: "yangon-karaweik-v2.jpg" }, { name: "Mandalay", my: "မန္တလေး", image: "mandalay-u-bein-v2.jpg" }, { name: "Bahan", my: "ဗဟန်း", image: "bahan-shwedagon-v2.jpg" }].map((place) => <Link key={place.name} href={`/search?purpose=rent&location=${place.name}`}><Image src={`/images/locations/${place.image}`} alt={tx(place.name, place.my)} fill sizes="30vw" loading="lazy" /><span>{tx(place.name, place.my)}<ArrowRight /></span></Link>)}</div></section>
       <WebFooter />
+      </div>
     </WebShell>
   );
 }

@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 import { MobileAppHeader } from "@/components/layout/mobile-app-header";
 import { AnimatedAssetIcon } from "@/components/ui/animated-asset-icon";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { HeroSlideshow } from "@/components/ui/hero-slideshow";
 import { useToast } from "@/components/ui/toast-provider";
 import { a7Motion } from "@/lib/motion";
 import { formatPropertyPrice, type Property } from "@/lib/properties";
@@ -87,7 +88,7 @@ function HomeDiscovery({ recommendedByPurpose, locationCounts }: HomeDiscoveryPr
         className="pt-0"
       >
         <motion.section variants={reveal(reduceMotion)} className="relative mx-1.5 h-[552px] max-w-[920px] overflow-hidden rounded-[26px] bg-[#191B24] sm:mx-auto sm:h-[610px] sm:rounded-[38px]" aria-labelledby="home-hero-title">
-          <ProgressiveImage src="/images/properties/hero-modern-yangon-v2.png" alt="Contemporary tropical home in Yangon at blue hour" fill priority sizes="(max-width: 920px) calc(100vw - 12px), 920px" className="object-cover object-center" skeletonClassName="bg-[#DCEBFF]" />
+          <HeroSlideshow sizes="(max-width: 920px) calc(100vw - 12px), 920px" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,13,23,.52)_0%,rgba(7,13,23,.18)_34%,rgba(7,13,23,.84)_100%)]" />
 
           <div className="relative z-10 flex h-full flex-col justify-between px-5 pb-[18px] pt-3 sm:px-8 sm:pb-10 sm:pt-6">
@@ -106,7 +107,7 @@ function HomeDiscovery({ recommendedByPurpose, locationCounts }: HomeDiscoveryPr
                 <p className="mt-3 max-w-[440px] text-[16px] leading-6 text-white/78">{tx("Clear prices, visible verification status, and direct inquiry tools.", "ရှင်းလင်းသောဈေးနှုန်း၊ မြင်သာသောစိစစ်မှုအခြေအနေနှင့် တိုက်ရိုက်မေးမြန်းနိုင်မှု။")}</p>
               </div>
 
-              <form onSubmit={submitSearch} role="search" className="mt-5 flex h-16 items-center rounded-full bg-[#FAF8FF] p-1.5 pl-5 shadow-[0_14px_36px_rgba(0,0,0,.22)] focus-within:ring-4 focus-within:ring-[#B2C5FF]/25">
+              <form onSubmit={submitSearch} role="search" className="mt-5 flex h-16 items-center rounded-full bg-[#FAF8FF] p-1.5 pl-5 shadow-[0_14px_36px_rgba(0,0,0,.22)] a7-field-focus">
                 <Search className="size-5 shrink-0 text-[#424655]" />
                 <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={tx("Township, landmark or property ID...", "မြို့နယ်၊ အထင်ကရနေရာ သို့မဟုတ် အိမ်နံပါတ်...")} aria-label={tx("Search for a home", "အိမ်ရှာရန်")} className="h-full min-w-0 flex-1 bg-transparent px-3 !text-[14px] !leading-[52px] text-[#191B24] outline-none placeholder:text-[#66758A] sm:!text-[16px]" />
                 <button type="submit" className="grid size-[52px] shrink-0 place-items-center rounded-full bg-[#064D93] text-white shadow-[0_7px_18px_rgba(0,83,210,.28)] transition-transform active:scale-95" aria-label={tx("Search", "ရှာရန်")}><Search className="size-5" /></button>

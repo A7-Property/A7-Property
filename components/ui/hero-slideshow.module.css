@@ -1,0 +1,31 @@
+.background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  z-index: 0;
+  transition: opacity 1000ms ease-in-out;
+}
+
+/* Keep an opaque outgoing image underneath the incoming fade, including wraparound. */
+.slide[data-previous="true"] { opacity: 1; z-index: 1; }
+.slide[data-active="true"] { opacity: 1; z-index: 2; }
+
+.image {
+  object-fit: cover;
+  object-position: center;
+  opacity: 1 !important;
+  filter: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide { transition: none !important; }
+}

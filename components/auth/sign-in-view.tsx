@@ -14,6 +14,7 @@ import * as authApi from "@/lib/api/auth";
 import { useLanguage } from "@/components/i18n/language-provider";
 import { AnimatedAssetIcon } from "@/components/ui/animated-asset-icon";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/toast-provider";
 
 type AuthMode = "sign-in" | "create";
 type AuthStep = "role" | "email" | "password" | "reset" | "identification";
@@ -70,13 +71,12 @@ const copy = {
     imageTitle: "Your next home starts here.",
     imageBody: "Explore listings with visible verification status and direct inquiry tools across Myanmar.",
     trust: "Visible status · Clear prices · Direct inquiry",
-    serverNotice: "Your account is created on the A7 Property server. Confirm your email to publish listings, send inquiries and request viewings.",
     signInFailed: "That email and password combination is not correct.",
     emailTaken: "An account already uses this email address. Sign in instead.",
     lockedOut: "Too many failed attempts. Please wait before trying again.",
     rateLimited: "Too many requests. Please wait a minute and try again.",
     genericError: "Something went wrong. Please try again.",
-    verifySent: "Check your inbox for a confirmation link.",
+    verifySent: "Account created. Please verify your email to continue.",
     verifyNotSent: "Your account was created, but the confirmation email could not be sent. You can request a new one later.",
     socialUnavailable: "Social sign-in is not available. Use your email address and password.",
     resetSent: "If an account uses that address, a reset link is on its way.",
@@ -141,13 +141,12 @@ const copy = {
     imageTitle: "သင့်အိမ်အသစ်ကို ဒီနေရာက စတင်ရှာပါ။",
     imageBody: "မြန်မာနိုင်ငံအနှံ့ စိစစ်မှုအခြေအနေမြင်သာသော အိမ်များကို ရှာဖွေပြီး တိုက်ရိုက်မေးမြန်းပါ။",
     trust: "မြင်သာသောအခြေအနေ · ရှင်းလင်းသောဈေးနှုန်း · တိုက်ရိုက်မေးမြန်းမှု",
-    serverNotice: "သင့်အကောင့်ကို A7 Property server ပေါ်တွင် ဖန်တီးပါမည်။ ကြော်ငြာတင်ခြင်း၊ စုံစမ်းမေးမြန်းခြင်းနှင့် အိမ်လာကြည့်ရန် တောင်းဆိုခြင်းအတွက် အီးမေးလ်ကို အတည်ပြုပါ။",
     signInFailed: "အီးမေးလ်နှင့် စကားဝှက် မကိုက်ညီပါ။",
     emailTaken: "ဤအီးမေးလ်လိပ်စာဖြင့် အကောင့်ရှိပြီးသားဖြစ်ပါသည်။ အကောင့်ဝင်ပါ။",
     lockedOut: "မအောင်မြင်သော ကြိုးစားမှု အလွန်များပါသည်။ ခဏစောင့်ပြီး ထပ်မံကြိုးစားပါ။",
     rateLimited: "တောင်းဆိုမှု အလွန်များပါသည်။ ခဏစောင့်ပြီး ထပ်မံကြိုးစားပါ။",
     genericError: "အမှားတစ်ခု ဖြစ်ပွားပါသည်။ ထပ်မံကြိုးစားပါ။",
-    verifySent: "အတည်ပြုလင့်ခ်အတွက် သင့်အီးမေးလ်ကို စစ်ဆေးပါ။",
+    verifySent: "အကောင့်ဖန်တီးပြီးပါပြီ။ ဆက်လက်လုပ်ဆောင်ရန် သင့်အီးမေးလ်ကို အတည်ပြုပါ။",
     verifyNotSent: "အကောင့်ကို ဖန်တီးပြီးပါပြီ၊ သို့သော် အတည်ပြုအီးမေးလ် ပေးပို့နိုင်ခြင်း မရှိပါ။ နောက်မှ အသစ်တောင်းဆိုနိုင်ပါသည်။",
     socialUnavailable: "ပြင်ပအကောင့်ဖြင့် ဝင်ရောက်မှု မရရှိနိုင်ပါ။ အီးမေးလ်နှင့် စကားဝှက် အသုံးပြုပါ။",
     resetSent: "ထိုလိပ်စာကို အသုံးပြုသော အကောင့်ရှိပါက ပြန်သတ်မှတ်လင့်ခ်ကို ပေးပို့လိုက်ပါပြီ။",
@@ -216,6 +215,7 @@ function SignInView() {
   const initialMode = (searchParams.get("mode") as AuthMode) || "sign-in";
   const { mode: authMode, signInWithPassword, signUpWithPassword } = useAuth();
   const serverBacked = authMode === "server";
+  const { toast } = useToast();
   const { language, setLanguage } = useLanguage();
   const reduceMotion = useReducedMotion() ?? false;
   const [mode, setMode] = useState<AuthMode>(initialMode);
@@ -286,14 +286,18 @@ function SignInView() {
           address: address.trim(),
           accountType,
         });
-        setNotice(result.verificationEmailSent ? text.verifySent : text.verifyNotSent);
-
         if (accountType === "lister") {
+          setNotice(result.verificationEmailSent ? text.verifySent : text.verifyNotSent);
           setStep("identification");
           setSubmitting(false);
           return;
         }
 
+        toast({
+          title: result.verificationEmailSent ? text.verifySent : text.verifyNotSent,
+          tone: result.verificationEmailSent ? "success" : "info",
+          duration: 10000,
+        });
         goToNextScreen(result.user.accountType);
         return;
       }
@@ -424,9 +428,11 @@ function SignInView() {
             </motion.div>
 
             <form className="mt-9" onSubmit={handleSubmit} noValidate>
-              <p className="mb-5 rounded-xl border border-[#B9D8FF] bg-[#EEF6FF] px-4 py-3 text-[11px] leading-5 text-[#244B76]">
-                {serverBacked ? text.serverNotice : text.noApiNotice}
-              </p>
+              {!serverBacked && (
+                <p className="mb-5 rounded-xl border border-[#B9D8FF] bg-[#EEF6FF] px-4 py-3 text-[11px] leading-5 text-[#244B76]">
+                  {text.noApiNotice}
+                </p>
+              )}
               {serverBacked && (
               <AnimatePresence>
               {step === "role" && (
@@ -459,7 +465,7 @@ function SignInView() {
               {(step === "email" || step === "reset") && (
                 <motion.div key="email-step" initial={reduceMotion ? false : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={reduceMotion ? undefined : { opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}>
                   <label htmlFor="email" className="text-[13px] font-semibold text-[#101828]">{text.email}</label>
-                  <div className={`mt-2 flex h-[54px] items-center gap-3 rounded-xl border bg-[#F8FBFF] px-4 transition-[border-color,box-shadow] ${hasError ? "border-[#D92D20] shadow-[0_0_0_3px_rgba(217,45,32,.10)]" : "border-[#CCD4DE] focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]"}`}>
+                  <div className={`mt-2 flex h-[54px] items-center gap-3 rounded-xl border bg-[#F8FBFF] px-4 transition-[border-color,box-shadow] ${hasError ? "border-[#D92D20] shadow-[0_0_0_3px_rgba(217,45,32,.10)]" : "border-[#CCD4DE] a7-field-focus"}`}>
                     <Mail className={`size-5 shrink-0 ${hasError ? "text-[#D92D20]" : "text-[#7B8798]"}`} aria-hidden="true" />
                     <input
                       id="email"
@@ -488,14 +494,14 @@ function SignInView() {
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <div>
                       <label htmlFor="first-name" className="text-[13px] font-semibold text-[#101828]">{text.firstName}</label>
-                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 a7-field-focus">
                         <UserRound className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
                         <input id="first-name" name="given-name" type="text" autoComplete="given-name" maxLength={80} required value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder={text.firstNamePlaceholder} className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none" />
                       </div>
                     </div>
                     <div>
                       <label htmlFor="last-name" className="text-[13px] font-semibold text-[#101828]">{text.lastName}</label>
-                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 a7-field-focus">
                         <UserRound className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
                         <input id="last-name" name="family-name" type="text" autoComplete="family-name" maxLength={80} required value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder={text.lastNamePlaceholder} className="h-full min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none" />
                       </div>
@@ -503,7 +509,7 @@ function SignInView() {
                   </div>
                   <div>
                     <label htmlFor="address" className="text-[13px] font-semibold text-[#101828]">{text.address}</label>
-                    <div className="mt-2 flex min-h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                    <div className="mt-2 flex min-h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 a7-field-focus">
                       <MapPin className="size-5 shrink-0 text-[#7B8798]" aria-hidden="true" />
                       <textarea id="address" name="street-address" autoComplete="street-address" maxLength={500} required rows={2} value={address} onChange={(event) => setAddress(event.target.value)} placeholder={text.addressPlaceholder} className="min-h-[52px] min-w-0 flex-1 resize-none appearance-none border-0 bg-transparent py-3 text-[15px] text-[#101828] outline-none ring-0 placeholder:text-[#9AA3B1] focus:outline-none" />
                     </div>
@@ -517,8 +523,8 @@ function SignInView() {
               {step === "password" && (
                 <motion.div key="password-step" initial={reduceMotion ? false : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={reduceMotion ? undefined : { opacity: 0, x: -20 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}>
                   <button type="button" onClick={() => { setStep("email"); setTouched(false); setNotice(""); }} className="mb-5 inline-flex min-h-11 items-center gap-1 text-[12px] font-semibold text-[#123B73]"><ArrowLeft className="size-4" />{text.changeEmail}</button>
-                  <label htmlFor="password" className="text-[13px] font-semibold text-[#101828]">{text.password}</label>
-                  <div className={`mt-2 flex h-[54px] items-center gap-3 rounded-xl border bg-[#F8FBFF] px-4 ${passwordError ? "border-[#D92D20]" : "border-[#CCD4DE] focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]"}`}>
+                  <label htmlFor="password" className="block text-[13px] font-semibold text-[#101828]">{text.password}</label>
+                  <div className={`mt-2 flex h-[54px] items-center gap-3 rounded-xl border bg-[#F8FBFF] px-4 ${passwordError ? "border-[#D92D20]" : "border-[#CCD4DE] a7-field-focus"}`}>
                     <LockKeyhole className="size-5 shrink-0 text-[#7B8798]" />
                     <input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(event) => setPassword(event.target.value)} autoComplete={mode === "create" ? "new-password" : "current-password"} className="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-none" />
                     <button type="button" onClick={() => setShowPassword((current) => !current)} className="grid size-11 place-items-center rounded-full text-[#7B8798] hover:bg-[#F8FBFF]" aria-label={showPassword ? text.hidePassword : text.showPassword}>{showPassword ? <EyeOff className="size-[18px]" /> : <Eye className="size-[18px]" />}</button>
@@ -526,7 +532,7 @@ function SignInView() {
                   {mode === "create" && (
                     <>
                       <label htmlFor="confirm-password" className="mt-4 block text-[13px] font-semibold text-[#101828]">{text.confirmPassword}</label>
-                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                      <div className="mt-2 flex h-[54px] items-center gap-3 rounded-xl border border-[#CCD4DE] bg-[#F8FBFF] px-4 a7-field-focus">
                         <LockKeyhole className="size-5 shrink-0 text-[#7B8798]" />
                         <input id="confirm-password" type={showPassword ? "text" : "password"} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} autoComplete="new-password" className="h-full min-w-0 flex-1 bg-transparent text-[15px] outline-none" />
                       </div>
@@ -542,7 +548,7 @@ function SignInView() {
               {step === "identification" && (
                 <motion.div key="id-step" initial={reduceMotion ? false : { opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}>
                   <div className="mt-2 flex items-center justify-center w-full">
-                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-44 border-2 border-[#CCD4DE] border-dashed rounded-xl cursor-pointer bg-[#F8FBFF] hover:bg-gray-50 focus-within:border-[#123B73] focus-within:shadow-[0_0_0_4px_rgba(18,59,115,.12)]">
+                    <label htmlFor="dropzone-file" className="flex flex-col items-center justify-center w-full h-44 border-2 border-[#CCD4DE] border-dashed rounded-xl cursor-pointer bg-[#F8FBFF] hover:bg-gray-50 a7-field-focus">
                         <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             <Tag className="w-8 h-8 mb-4 text-[#7B8798]" />
                             <p className="mb-2 text-sm text-[#687385]"><span className="font-semibold">{text.selectFile}</span></p>

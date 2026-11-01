@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useId, useRef, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
 import { a7Motion } from "@/lib/motion";
@@ -28,6 +28,7 @@ function Sheet({ open, onOpenChange, title, description, children, footer, side 
   const closeRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
+  const dismissFromKeyboard = useEffectEvent(() => onOpenChange(false));
 
   useEffect(() => {
     if (!open) return;
@@ -38,7 +39,7 @@ function Sheet({ open, onOpenChange, title, description, children, footer, side 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onOpenChange(false);
+        dismissFromKeyboard();
         return;
       }
       if (event.key !== "Tab" || !dialogRef.current) return;
@@ -65,7 +66,7 @@ function Sheet({ open, onOpenChange, title, description, children, footer, side 
       window.removeEventListener("keydown", onKeyDown);
       previousFocus?.focus();
     };
-  }, [open, onOpenChange]);
+  }, [open]);
 
   const motionPosition = side === "bottom"
     ? { initial: { y: "100%" }, animate: { y: 0 }, exit: { y: "100%" } }

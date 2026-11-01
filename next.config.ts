@@ -14,14 +14,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: process.env.CAPACITOR_BUILD === "1" ? true : undefined,
     dangerouslyAllowLocalIP: true,
-    remotePatterns: [
-      {
-        protocol: "http",
-        hostname: "localhost",
-        port: "4000",
-        pathname: "/media/**",
-      },
-    ],
+    // Uploaded media is served at the API origin, outside its /api/v1 prefix.
+    remotePatterns: [new URL("/media/**", process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000")],
   },
 };
 

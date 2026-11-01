@@ -1,12 +1,13 @@
 "use client";
 
-import { Camera, ExternalLink, Loader2, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
+import { Camera, CircleAlert, ExternalLink, Loader2, Trash2 } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState, type ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/i18n/language-provider";
 import { AnimatedAssetIcon } from "@/components/ui/animated-asset-icon";
 import { ProgressiveImage } from "@/components/ui/progressive-image";
+import { PrivateDocumentPreview } from "@/components/ui/private-document-preview";
 import { Sheet } from "@/components/ui/sheet";
 import {
   furnitureLabels,
@@ -117,6 +118,48 @@ function draftFromProperty(property: Property): ListingDraft {
     imageAssetIds: [...(property.image_asset_ids ?? [])],
     documents: property.documents ? property.documents.map(d => ({ documentId: d.id, documentAssetId: "", documentUrl: d.url, documentType: d.type })) : [],
   };
+}
+
+function ListingErrorDialog({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  const { tx } = useLanguage();
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+  const messageId = useId();
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.showModal();
+    return () => {
+      dialog.close();
+      window.requestAnimationFrame(() => {
+        if (previousFocus?.isConnected) previousFocus.focus();
+      });
+    };
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      role="alertdialog"
+      aria-labelledby={titleId}
+      aria-describedby={messageId}
+      onCancel={(event) => { event.preventDefault(); onDismiss(); }}
+      onKeyDown={(event) => {
+        // Let the native modal handle focus and Escape without closing the editor beneath it.
+        if (event.key === "Escape" || event.key === "Tab") event.stopPropagation();
+      }}
+      className="fixed inset-0 m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-sm overflow-y-auto rounded-3xl border border-[#EAB7B1] bg-[#F8FBFF] p-6 text-center text-[#101828] shadow-2xl backdrop:bg-[#101828]/45 backdrop:backdrop-blur-[2px]"
+    >
+      <span className="mx-auto mb-4 grid size-12 place-items-center rounded-full bg-[#FFF0EE] text-[#B13D34]">
+        <CircleAlert className="size-6" aria-hidden="true" />
+      </span>
+      <h3 id={titleId} className="text-lg font-semibold">{tx("Please check your listing", "အိမ်စာရင်းကို ပြန်စစ်ဆေးပါ။")}</h3>
+      <p id={messageId} className="mt-3 text-sm leading-relaxed text-[#B13D34]">{message}</p>
+      <Button className="mt-6 min-h-11 w-full" onClick={onDismiss}>{tx("Back to editing", "ဆက်လက်ပြင်ဆင်ရန်")}</Button>
+    </dialog>
+  );
 }
 
 function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false, initialPurpose = "rent" }: ListingEditorSheetProps) {
@@ -322,6 +365,13 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
         </Button>
       )}
     >
+      {open && (error || uploadError || docUploadError) && (
+        <ListingErrorDialog message={error || uploadError || docUploadError} onDismiss={() => {
+          setError("");
+          setUploadError("");
+          setDocUploadError("");
+        }} />
+      )}
       {saved ? (
         <div className="flex min-h-[420px] flex-col items-center justify-center p-8 text-center">
           <AnimatedAssetIcon src="/icons/a7-draft-saved-3d.png" width={96} height={96} hover="float" className="size-24" imageClassName="drop-shadow-[0_10px_16px_rgba(18,59,115,.18)]" />
@@ -337,7 +387,6 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
         </div>
       ) : (
         <div className="space-y-5 p-5 sm:p-7">
-          {error && <div role="alert" className="rounded-xl border border-[#EAB7B1] bg-[#FFF7F6] px-4 py-3 text-xs text-[#B13D34]">{error}</div>}
 
           <label className="block">
             <span className={labelClass}>{tx("Property title", "အိမ်စာရင်းခေါင်းစဉ်")}</span>
@@ -488,7 +537,6 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
               </strong>
               <small className="mt-1 text-[9px] text-[#667085]">{tx("JPG, PNG or WebP · up to 20 photos · 10 MB each", "JPG၊ PNG သို့မဟုတ် WebP · ပုံ ၂၀ အထိ · တစ်ပုံလျှင် 10 MB")}</small>
             </label>
-            {uploadError && <p role="alert" className="mt-2 text-[11px] text-[#B13D34]">{uploadError}</p>}
             <p className="mt-2 flex items-center gap-1.5 text-[9px] text-[#667085]"><Camera className="size-3.5" />{tx("Start with a bright, wide room photo for more inquiries.", "မေးမြန်းမှုများလာစေရန် အလင်းရောင်ကောင်းသော အခန်းကျယ်ပုံကို ပထမထည့်ပါ။")}</p>
           </div>
 
@@ -539,28 +587,12 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
               <div className="mb-3 grid grid-cols-2 gap-2">
                 {draft.documents.map((doc, index) => (
                   <div key={index} className="relative overflow-hidden rounded-xl border border-[#D0D6E0] bg-[#F8FBFF]">
-                    <a
-                      href={doc.documentUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#123B73]"
-                      aria-label={tx(`Open ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1} ကို ဖွင့်ကြည့်ရန်`)}
-                    >
-                      <span className="relative block aspect-[4/3] overflow-hidden bg-[#F2F4F7]">
-                        <ProgressiveImage
-                          src={doc.documentUrl}
-                          alt={tx(`Ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1}`)}
-                          fill
-                          sizes="(max-width: 540px) 50vw, 230px"
-                          className="object-cover transition-transform group-hover:scale-[1.02]"
-                          loading="lazy"
-                        />
-                      </span>
-                      <span className="flex min-h-11 items-center gap-1.5 px-3 text-[11px] font-medium text-[#344054]">
-                        <ExternalLink className="size-3.5 shrink-0" />
-                        {tx(`Document ${index + 1}`, `စာရွက်စာတမ်း ${index + 1}`)}
-                      </span>
-                    </a>
+                    <PrivateDocumentPreview
+                      src={doc.documentUrl}
+                      alt={tx(`Ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1}`)}
+                      label={tx(`Document ${index + 1}`, `စာရွက်စာတမ်း ${index + 1}`)}
+                      openLabel={tx(`Open ownership document ${index + 1}`, `ပိုင်ဆိုင်မှုစာရွက်စာတမ်း ${index + 1} ကို ဖွင့်ကြည့်ရန်`)}
+                    />
                     {(doc.documentAssetId || doc.documentId) && (
                       <button
                         type="button"
@@ -584,7 +616,6 @@ function ListingEditorSheet({ open, onOpenChange, property, onSave, busy = false
               </strong>
               <small className="mt-1 text-[9px] text-[#667085]">{tx("Only visible to you and admins. Max 5 files.", "သင်နှင့် admin သာ မြင်နိုင်မည်။ အများဆုံး ၅ ဖိုင်။")}</small>
             </label>
-            {docUploadError && <p role="alert" className="mt-2 text-[11px] text-[#B13D34]">{docUploadError}</p>}
           </div>
 
         </div>

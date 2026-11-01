@@ -52,7 +52,7 @@ function QuickFilterBar({ value, onChange, onOpenMore, onClear }: QuickFilterBar
 
 function QuickSelect({ label, selected, value, onChange, children }: { label: string; selected: boolean; value: string | number; onChange: (value: string) => void; children: React.ReactNode }) {
   return (
-    <label className={cn("relative inline-flex h-11 shrink-0 items-center rounded-full border px-4 shadow-sm transition-colors focus-within:ring-3 focus-within:ring-[#123B73]/15", selected ? "border-[#123B73] bg-[#F1F6FF] text-[#123B73]" : "border-[#D5DEE8] bg-white text-[#526172] hover:border-[#123B73]/50")}>
+    <label className={cn("relative inline-flex h-11 shrink-0 items-center rounded-full border px-4 shadow-sm transition-colors a7-field-focus", selected ? "border-[#123B73] bg-[#F1F6FF] text-[#123B73]" : "border-[#D5DEE8] bg-white text-[#526172] hover:border-[#123B73]/50")}>
       <span className="sr-only">{label}</span>
       <select className="max-w-[150px] appearance-none bg-transparent pr-5 text-xs font-semibold focus-visible:!outline-none" value={value} onChange={(event) => onChange(event.target.value)}>{children}</select>
       <span className="pointer-events-none absolute right-3 text-[11px]">⌄</span>

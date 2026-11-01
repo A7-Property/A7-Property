@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { submitIdentification } from "@/lib/api/users";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Message, MessageContent, MessageFooter, MessageHeader } from "@/components/ui/message";
 import {
   BarChart3,
   Building2,
@@ -60,7 +61,7 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
   const displayName = user?.fullName || tx("Property owner", "အိမ်ရှင်");
   const displayInitials = displayName.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   const { portfolio, ready: portfolioReady, failed: portfolioFailed, overview, refresh: refreshPortfolio, serverBacked, updateListing, createListing: createNewListing, publish, pause, archiveListing, confirmAvailability, markUnavailable } = useListerPortfolio(role, properties);
-  const { failed: conversationsFailed, refresh: refreshConversations, conversations, loadThread, sendReply: submitReply, startFromViewing } = useConversations();
+  const { failed: conversationsFailed, refresh: refreshConversations, conversations, loadThread, markRead, sendReply: submitReply, startFromViewing } = useConversations();
   const { failed: viewingsFailed, refresh: refreshViewings, appointments, changeStatus } = useViewings();
 
   const { inquiries, failed: inquiriesFailed, refresh: refreshInquiries, changeStatus: changeInquiryStatus } = useInquiries();
@@ -78,6 +79,9 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
   const [notice, setNotice] = useState("");
   const [leadReply, setLeadReply] = useState("");
   const [leadStatus, setLeadStatus] = useState("");
+  const [replyError, setReplyError] = useState("");
+  const [replySending, setReplySending] = useState(false);
+  const replySendingRef = useRef(false);
   const [documentsReady, setDocumentsReady] = useState(false);
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
   const [verificationBusy, setVerificationBusy] = useState(false);
@@ -310,16 +314,25 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
 
 
   function openLead(lead: CRMLead) {
-    if (lead.conversationId) loadThread(lead.conversationId);
+    if (lead.conversationId) {
+      loadThread(lead.conversationId);
+      markRead(lead.conversationId);
+    }
     setSelectedLead(lead);
     setLeadReply("");
     setLeadStatus("");
+    setReplyError("");
   }
 
   async function sendLeadReply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = leadReply.trim();
-    if (!text || !selectedLead) return;
+    if (!text || !selectedLead || replySendingRef.current) return;
+    replySendingRef.current = true;
+    setReplySending(true);
+    setReplyError("");
+    setLeadStatus("");
+    try {
 
     // A reply needs a thread. A viewing-only lead has none yet, so open or
     // reuse one with the seeker that requested the viewing before sending.
@@ -341,10 +354,17 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
     }
 
     const sent = await submitReply(conversationId, text);
-    if (!sent) return;
+    if (!sent) {
+      setReplyError(tx("Reply not sent. Your text is saved here. Check the connection and try sending again.", "ပြန်စာ မပို့နိုင်ပါ။ ရေးထားသောစာကို ဤနေရာတွင် ထိန်းသိမ်းထားပါသည်။ ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ပြန်ပို့ပါ။"));
+      return;
+    }
     setSelectedLead((current) => current ? { ...current, status: "Replied" } : current);
     setLeadStatus(tx(`Reply sent to ${selectedLead.name}.`, `${selectedLead.name} ထံ ပြန်စာပေးပို့ပြီးပါပြီ။`));
     setLeadReply("");
+    } finally {
+      replySendingRef.current = false;
+      setReplySending(false);
+    }
   }
 
   async function updateInquiry(status: "READ" | "CLOSED") {
@@ -373,6 +393,7 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
   }
 
   const selectedLeadProperty = selectedLead ? portfolio.concat(properties).find((property) => property.id === selectedLead.propertyId) : null;
+  const selectedLeadConversation = conversations.find((conversation) => conversation.id === selectedLead?.conversationId);
   const statusLabel = (status: string) => ({
     "Awaiting owner": tx("Awaiting owner", "အိမ်ရှင်စောင့်ဆိုင်းဆဲ"),
     Confirmed: tx("Confirmed", "အတည်ပြုပြီး"),
@@ -482,7 +503,7 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
       <ListingEditorSheet open={editorOpen} onOpenChange={handleEditorOpenChange} property={selectedProperty} onSave={saveListing} busy={savingListing} initialPurpose={searchParams.get("purpose") === "sale" ? "sale" : "rent"} />
 
       <Sheet open={Boolean(selectedLead)} onOpenChange={(open) => { if (!open) setSelectedLead(null); }} title={selectedLead ? `${selectedLead.name} · ${leadIntentLabel(selectedLead.intent)}` : tx("Lead details", "စိတ်ဝင်စားသူအသေးစိတ်")} description={selectedLeadProperty?.title} side="right" footer={selectedLead && (!selectedLead.inquiryId || selectedLead.conversationId) && (
-        <form onSubmit={sendLeadReply} className="flex items-center gap-2"><input value={leadReply} onChange={(event) => setLeadReply(event.target.value)} placeholder={tx("Write a reply…", "ပြန်စာရေးပါ…")} aria-label={tx("Reply to lead", "စိတ်ဝင်စားသူကို ပြန်စာရေးရန်")} className="h-11 min-w-0 flex-1 rounded-full border border-[#D0DEF0] px-4 text-xs outline-none focus:border-[#123B73]" /><Button type="submit" size="icon" className="size-11 rounded-full" disabled={!leadReply.trim()} aria-label={tx("Send lead reply", "ပြန်စာပို့ရန်")}><Send className="size-4" /></Button></form>
+        <div className="space-y-2">{replyError && <p role="alert" className="text-xs leading-5 text-[#B13D34]">{replyError}</p>}<form onSubmit={sendLeadReply} aria-busy={replySending} className="flex items-center gap-2"><input readOnly={replySending} value={leadReply} onChange={(event) => setLeadReply(event.target.value)} placeholder={tx("Write a reply…", "ပြန်စာရေးပါ…")} aria-label={tx("Reply to lead", "စိတ်ဝင်စားသူကို ပြန်စာရေးရန်")} className="h-11 min-w-0 flex-1 rounded-full border border-[#D0DEF0] px-4 text-xs outline-none focus:border-[#123B73]" /><Button type="submit" size="icon" className="size-11 rounded-full" disabled={replySending || !leadReply.trim()} aria-label={replySending ? tx("Sending reply…", "ပြန်စာပို့နေသည်…") : tx("Send lead reply", "ပြန်စာပို့ရန်")}><Send className="size-4" /></Button></form></div>
       )}>
         {selectedLead && (
           <div className="space-y-5 p-5 sm:p-7">
@@ -492,6 +513,26 @@ function PropertyCRM({ role, properties }: { role: CRMRole; properties: Property
             {selectedLead.inquiryId && <div className="space-y-3"><p className="text-sm">{tx("Inquiry status changes do not send a message. A reply requires an existing conversation.", "မေးမြန်းမှုအခြေအနေပြောင်းခြင်းသည် စာပို့ခြင်းမဟုတ်ပါ။ စာပြန်ရန် ရှိပြီးသားစာပြောဆိုမှု လိုအပ်သည်။")}</p><div className="flex gap-2">{selectedLead.status === "New" && <Button variant="outline" onClick={() => void updateInquiry("READ")}>{tx("Mark read", "ဖတ်ပြီးမှတ်သားရန်")}</Button>}{selectedLead.status !== "CLOSED" && <Button variant="outline" onClick={() => void updateInquiry("CLOSED")}>{tx("Close inquiry", "မေးမြန်းမှု ပိတ်ရန်")}</Button>}</div></div>}
             {selectedLead.viewingId && selectedLead.status === "Awaiting owner" && <div className="grid grid-cols-2 gap-2"><Button type="button" onClick={() => updateViewingStatus("Confirmed")}>{tx("Confirm viewing", "အိမ်ကြည့်ခွင့်အတည်ပြုရန်")}</Button><Button type="button" variant="outline" onClick={() => updateViewingStatus("Declined")}>{tx("Decline", "ငြင်းပယ်ရန်")}</Button></div>}
             {selectedLeadProperty && <Link href={`/properties/${selectedLeadProperty.id}`} className="flex min-h-11 items-center justify-between rounded-2xl border border-[#4DA3FF] bg-[#DCEBFF] p-4 text-xs font-semibold text-[#123B73]">{tx("View property", "အိမ်ကြည့်ရန်")} <ChevronRight className="size-4" /></Link>}
+            {selectedLeadConversation && (
+              <section aria-label={tx("Conversation", "စကားပြောခန်း")} className="space-y-5 border-t border-[#D0DEF0] pt-5">
+                <h3 className="text-xs font-semibold text-[#667085]">{tx("Conversation", "စကားပြောခန်း")}</h3>
+                {selectedLeadConversation.thread.map((message) => {
+                  const own = message.sender === "user";
+                  return (
+                    <Message key={message.id} align={own ? "end" : "start"}>
+                      <MessageContent>
+                        <MessageHeader className="text-xs text-[#667085]">{own ? tx("You", "သင်") : selectedLead.name}</MessageHeader>
+                        <p className={`max-w-[90%] whitespace-pre-wrap break-words rounded-2xl px-4 py-3 text-sm leading-relaxed ${own ? "self-end rounded-br-sm bg-[#123B73] text-white" : "rounded-bl-sm bg-[#E4EEFC] text-[#101828]"}`}>{message.text}</p>
+                        <MessageFooter className="gap-2 text-xs text-[#667085]">
+                          {message.time}
+                          {own && <span>{message.isRead === true ? tx("Read", "ဖတ်ပြီး") : tx("Sent", "ပေးပို့ပြီး")}</span>}
+                        </MessageFooter>
+                      </MessageContent>
+                    </Message>
+                  );
+                })}
+              </section>
+            )}
           </div>
         )}
       </Sheet>

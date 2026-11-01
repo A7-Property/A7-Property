@@ -518,17 +518,29 @@ a {
 }
 
 button:focus-visible,
-a:focus-visible,
-select:focus-visible,
-input:focus-visible,
-textarea:focus-visible {
+a:focus-visible {
   outline: 3px solid rgba(18, 59, 115, 0.26);
   outline-offset: 3px;
 }
 
-input[data-focus-ring="parent"]:focus-visible,
-textarea[data-focus-ring="parent"]:focus-visible,
-select[data-focus-ring="parent"]:focus-visible {
+/* Fields use one quiet neutral indicator, including composed input containers. */
+:is(input, textarea, select):focus {
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  outline: 1px solid #98a2b3;
+  outline-offset: 2px;
+}
+
+:is(input, textarea, select):focus:not([aria-invalid="true"]) {
+  border-color: #98a2b3;
+}
+
+.a7-field-focus:focus-within {
+  outline: 1px solid #98a2b3;
+  outline-offset: 2px;
+}
+
+.a7-field-focus :is(input, textarea, select):focus {
   outline: none;
   outline-offset: 0;
 }

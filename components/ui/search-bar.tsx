@@ -16,7 +16,7 @@ function SearchBar({ value, onValueChange, onSubmit, label, placeholder, trailin
   return (
     <form
       role="search"
-      className={cn("flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border border-a7-line bg-[#F8FBFF] px-4 shadow-[var(--shadow-hairline)] transition-[border-color,box-shadow] duration-[var(--duration-base)] focus-within:border-a7-blue focus-within:shadow-[0_0_0_3px_rgba(18,59,115,.1)]", className)}
+      className={cn("flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-control)] border border-a7-line bg-[#F8FBFF] px-4 shadow-[var(--shadow-hairline)] transition-[border-color,box-shadow] duration-[var(--duration-base)] a7-field-focus", className)}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.();

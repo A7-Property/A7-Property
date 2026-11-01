@@ -209,7 +209,7 @@ function A7AssistantPopover({ className, labelClassName }: A7AssistantPopoverPro
               </AnimatePresence>
 
               <form onSubmit={submitQuestion}>
-                <div className="flex items-center gap-2 rounded-[16px] border border-[#C9D5E2] bg-white p-1.5 pl-3.5 shadow-[0_5px_16px_rgba(31,55,79,.06)] transition-[border-color,box-shadow] focus-within:border-[#75AEFF] focus-within:shadow-[0_0_0_3px_rgba(0, 87, 217,.1)]">
+                <div className="flex items-center gap-2 rounded-[16px] border border-[#C9D5E2] bg-white p-1.5 pl-3.5 shadow-[0_5px_16px_rgba(31,55,79,.06)] transition-[border-color,box-shadow] a7-field-focus">
                   <input
                     ref={inputRef}
                     type="text"
